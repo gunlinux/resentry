@@ -1,0 +1,36 @@
+[project]
+name = "resentry"
+version = "0.1.0"
+description = "A FastAPI application for Sentry envelope storage and processing"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "sqlalchemy>=2.0.36",
+    "asyncpg>=0.30.0",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.9.2",
+    "pydantic-settings>=2.6.1",
+    "alembic>=1.13.3",
+    "python-multipart>=0.0.20",
+    "brotli>=1.1.0",
+    "httpx>=0.28.0",
+    "aiosqlite>=0.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.8.0",
+    "black>=24.10.0",
+    "mypy>=1.13.0",
+]
+
+
+[project.scripts]
+start = "resentry.main:app"
+run-dev = "uvicorn resentry.main:app --reload --host 0.0.0.0 --port 8000"
+run-prod = "uv run uvicorn resentry.main:app --host 0.0.0.0 --port 8000"
