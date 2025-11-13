@@ -37,10 +37,10 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db_ses
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     for key, value in user.model_dump().items():
         setattr(db_user, key, value)
-    
+
     db.commit()
     db.refresh(db_user)
     return db_user
@@ -51,7 +51,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db_session)):
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     db.delete(db_user)
     db.commit()
     return {"message": "User deleted successfully"}

@@ -14,13 +14,13 @@ def client():
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool
+        poolclass=StaticPool,
     )
     Base.metadata.create_all(bind=engine)
-    
+
     # Create a sessionmaker that uses the test engine
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
+
     # Dependency override to use the test database
     def override_get_db():
         db = TestingSessionLocal()
@@ -28,10 +28,10 @@ def client():
             yield db
         finally:
             db.close()
-    
+
     # Create app instance and apply the override
     app = create_app()
     app.dependency_overrides[get_sync_db] = override_get_db
-    
+
     with TestClient(app) as test_client:
         yield test_client

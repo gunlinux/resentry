@@ -94,8 +94,10 @@ def parse_json(
     Safely parse JSON from bytes, handling UTF-8 encoding.
     """
     if isinstance(data, bytes):
-        data = data.decode("utf-8", "replace")
-    return json.loads(data)
+        data_str = data.decode("utf-8", "replace")
+    else:
+        data_str = data
+    return json.loads(data_str)
 
 
 def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
@@ -144,8 +146,15 @@ def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
 
         # Get the length of the payload
         length = item_headers.get("length", 0)
+        # Convert length to int if it's a string
+        if isinstance(length, str):
+            try:
+                length = int(length)
+            except ValueError:
+                length = 0
 
-        if length is not None:
+        # Ensure length is a non-negative integer
+        if length is not None and isinstance(length, int) and length >= 0:
             # Read exactly `length` bytes for the payload
             payload = buffer.read(length)
             # Read and discard the trailing newline
@@ -154,15 +163,22 @@ def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
             # If no length specified, read up to the next newline
             payload = buffer.readline().rstrip(b"\n")
 
-        # Create the envelope item
-        item = EnvelopeItem(headers=item_headers, payload=payload)
+        # Ensure payload is bytes
+        if isinstance(payload, str):
+            payload = payload.encode("utf-8")
+
+        # Create the envelope item - cast headers to proper type
+        item = EnvelopeItem(
+            headers=typing.cast(ItemHeader, item_headers), payload=payload
+        )
         items.append(item)
 
-    return Envelope(headers=envelope_headers, items=items)
+    return Envelope(headers=typing.cast(EnvelopeHeader, envelope_headers), items=items)
 
 
 def unpack_sentry_envelope_from_request(
-    envelope_bytes: bytes, content_encoding: str | None = None,
+    envelope_bytes: bytes,
+    content_encoding: str | None = None,
 ) -> Envelope:
     """
     Unpack a Sentry envelope from HTTP request data.

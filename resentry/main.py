@@ -16,7 +16,7 @@ from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables on startup
-    if settings.DATABASE_URL.startswith('sqlite+aiosqlite'):
+    if settings.DATABASE_URL.startswith("sqlite+aiosqlite"):
         # For async engine (production)
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -49,7 +49,9 @@ def create_app() -> FastAPI:
     app.include_router(api_router, prefix="/api/v1", tags=["api"])
 
     # Add the specific endpoint for getting all project events
-    @app.get("/api/projects/events", response_model=List[EnvelopeSchema], tags=["envelopes"])
+    @app.get(
+        "/api/projects/events", response_model=List[EnvelopeSchema], tags=["envelopes"]
+    )
     def get_project_events(db: Session = Depends(get_sync_db)):
         envelopes = db.query(EnvelopeModel).all()
         return envelopes
@@ -62,4 +64,5 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("resentry.main:app", host="0.0.0.0", port=8000, reload=True)

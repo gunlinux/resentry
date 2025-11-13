@@ -14,38 +14,41 @@ envelopes_router = APIRouter()
 
 @envelopes_router.post("/{project_id}/envelope/")
 async def store_envelope(
-    request: Request,
-    project_id: int,
-    db: Session = Depends(get_db_session)
+    request: Request, project_id: int, db: Session = Depends(get_db_session)
 ):
     # Check if project exists
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     # Read the raw body bytes
     body = await request.body()
     content_encoding = request.headers.get("content-encoding", None)
-    
+
     # Parse the envelope using existing sentry functionality
     try:
         envelope = unpack_sentry_envelope_from_request(body, content_encoding)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid envelope format: {str(e)}")
-    
+        raise HTTPException(
+            status_code=400, detail=f"Invalid envelope format: {str(e)}"
+        )
+
     # Create envelope record in database
+    sent_at_str = envelope.headers.get("sent_at")
+    sent_at = datetime.datetime.fromisoformat(sent_at_str) if sent_at_str else None
+
     envelope_db = EnvelopeModel(
         project_id=project_id,
         payload=body,
         event_id=envelope.event_id,
-        sent_at=datetime.datetime.fromisoformat(envelope.headers.get("sent_at")) if envelope.headers.get("sent_at") else None,
-        dsn=envelope.headers.get("dsn")
+        sent_at=sent_at,
+        dsn=envelope.headers.get("dsn"),
     )
-    
+
     db.add(envelope_db)
     db.commit()
     db.refresh(envelope_db)
-    
+
     return {"message": "Envelope stored successfully", "envelope_id": envelope_db.id}
 
 

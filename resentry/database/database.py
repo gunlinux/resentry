@@ -1,6 +1,6 @@
 from typing import AsyncGenerator, Generator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from sqlalchemy import create_engine
 
 from resentry.config import settings
@@ -15,18 +15,16 @@ async_engine = create_async_engine(
 # Create the sync engine for sync operations (like tests)
 sync_engine = create_engine("sqlite:///./test.db", echo=False)
 
-# Create async session
-AsyncSessionLocal = sessionmaker(
-    async_engine, 
-    class_=AsyncSession, 
-    expire_on_commit=False
-)
+
+# Create async session factory with proper type handling
+def create_async_session():
+    return AsyncSession(async_engine, expire_on_commit=False)
+
 
 # Create sync session
 SyncSessionLocal = sessionmaker(
-    sync_engine,
-    expire_on_commit=False
-)
+    bind=sync_engine, class_=Session, expire_on_commit=False
+)  # type: ignore
 
 # Create base class for models
 Base = declarative_base()
@@ -38,11 +36,11 @@ async def create_db_and_tables():
 
 
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as session:
+    async with create_async_session() as session:
         yield session
 
 
-def get_sync_db() -> Generator:
+def get_sync_db() -> Generator[Session, None, None]:
     db = SyncSessionLocal()
     try:
         yield db
