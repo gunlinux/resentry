@@ -1,10 +1,10 @@
 """General helper functions for resentry."""
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 
-def format_timestamp(dt: Optional[datetime] = None) -> str:
+def format_timestamp(dt: datetime | None = None) -> str:
     """
     Format a datetime object as an ISO string.
 

@@ -1,14 +1,13 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 
 class EnvelopeBase(BaseModel):
     project_id: int
     payload: bytes
-    event_id: Optional[str] = None
-    sent_at: Optional[datetime] = None
-    dsn: Optional[str] = None
+    event_id: str | None = None
+    sent_at: datetime | None = None
+    dsn: str | None = None
 
 
 class EnvelopeCreate(EnvelopeBase):
@@ -18,8 +17,7 @@ class EnvelopeCreate(EnvelopeBase):
 class Envelope(EnvelopeBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)  # pyright: ignore[reportUnannotatedClassAttribute]
 
 
 class EnvelopeItemBase(BaseModel):
@@ -35,5 +33,4 @@ class EnvelopeItemCreate(EnvelopeItemBase):
 class EnvelopeItem(EnvelopeItemBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)  # pyright: ignore[reportUnannotatedClassAttribute]
