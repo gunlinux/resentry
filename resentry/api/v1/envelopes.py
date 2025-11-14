@@ -1,25 +1,28 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import AsyncSession
 import datetime
 
-from resentry.api.deps import get_db_session
+from resentry.api.deps import get_async_db_session
 from resentry.database.models.envelope import Envelope as EnvelopeModel
 from resentry.database.models.project import Project as ProjectModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
-from resentry.sentry import unpack_sentry_envelope_from_request
+from resentry.sentry import unpack_sentry_envelope_from_request_async
 
 envelopes_router = APIRouter()
 
 
 @envelopes_router.post("/{project_id}/envelope/")
 async def store_envelope(
-    request: Request, project_id: int, db: Session = Depends(get_db_session)
+    request: Request, project_id: int, db: AsyncSession = Depends(get_async_db_session)
 ):
     # Check if project exists
-    project = db.exec(select(ProjectModel).where(ProjectModel.id == project_id)).first()
+    result = await db.execute(select(ProjectModel).where(ProjectModel.id == project_id))
+    project = result.first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
+    project = project[0]  # Get the actual project object
 
     # Read the raw body bytes
     body = await request.body()
@@ -27,7 +30,7 @@ async def store_envelope(
 
     # Parse the envelope using existing sentry functionality
     try:
-        envelope = unpack_sentry_envelope_from_request(body, content_encoding)
+        envelope = await unpack_sentry_envelope_from_request_async(body, content_encoding)
     except ValueError as e:
         raise HTTPException(
             status_code=400, detail=f"Invalid envelope format: {str(e)}"
@@ -46,13 +49,14 @@ async def store_envelope(
     )
 
     db.add(envelope_db)
-    db.commit()
-    db.refresh(envelope_db)
+    await db.commit()
+    await db.refresh(envelope_db)
 
     return {"message": "Envelope stored successfully", "envelope_id": envelope_db.id}
 
 
 @envelopes_router.get("/projects/events", response_model=List[EnvelopeSchema])
-def get_project_events(db: Session = Depends(get_db_session)):
-    envelopes = db.exec(select(EnvelopeModel)).all()
-    return envelopes
+async def get_project_events(db: AsyncSession = Depends(get_async_db_session)):
+    result = await db.execute(select(EnvelopeModel))
+    envelopes = result.all()
+    return [envelope[0] for envelope in envelopes]

@@ -1,7 +1,77 @@
 """General helper functions for resentry."""
 
+import asyncio
+import json
 from datetime import datetime
 from typing import Any
+from concurrent.futures import ThreadPoolExecutor
+
+
+def sync_json_loads(data: str) -> Any:
+    """Synchronous JSON parsing function to run in thread pool."""
+    return json.loads(data)
+
+
+def sync_json_dumps(data: Any) -> str:
+    """Synchronous JSON serialization function to run in thread pool."""
+    return json.dumps(data)
+
+
+def sync_gzip_decompress(data: bytes) -> bytes:
+    """Synchronous gzip decompression function to run in thread pool."""
+    import gzip
+    return gzip.decompress(data)
+
+
+def sync_brotli_decompress(data: bytes) -> bytes:
+    """Synchronous brotli decompression function to run in thread pool."""
+    import brotli  # type: ignore
+    return brotli.decompress(data)
+
+
+def sync_decode_utf8(data: bytes) -> str:
+    """Synchronous UTF-8 decoding function to run in thread pool."""
+    return data.decode("utf-8", "replace")
+
+
+async def async_json_loads(data: str) -> Any:
+    """Asynchronously parse JSON using thread pool executor."""
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        result = await loop.run_in_executor(executor, sync_json_loads, data)
+    return result
+
+
+async def async_json_dumps(data: Any) -> str:
+    """Asynchronously serialize JSON using thread pool executor."""
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        result = await loop.run_in_executor(executor, sync_json_dumps, data)
+    return result
+
+
+async def async_gzip_decompress(data: bytes) -> bytes:
+    """Asynchronously decompress gzip data using thread pool executor."""
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        result = await loop.run_in_executor(executor, sync_gzip_decompress, data)
+    return result
+
+
+async def async_brotli_decompress(data: bytes) -> bytes:
+    """Asynchronously decompress brotli data using thread pool executor."""
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        result = await loop.run_in_executor(executor, sync_brotli_decompress, data)
+    return result
+
+
+async def async_decode_utf8(data: bytes) -> str:
+    """Asynchronously decode UTF-8 data using thread pool executor."""
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        result = await loop.run_in_executor(executor, sync_decode_utf8, data)
+    return result
 
 
 def format_timestamp(dt: datetime | None = None) -> str:

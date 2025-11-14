@@ -6,27 +6,29 @@ Resentry is a FastAPI-based web application that serves as a Sentry-compatible e
 
 ### Core Technologies
 - **Framework**: FastAPI (Python web framework with built-in API documentation)
-- **Database**: SQLAlchemy ORM with support for multiple database backends (defaults to SQLite)
+- **Database**: SQLAlchemy ORM with async support for multiple database backends (defaults to SQLite)
 - **Serialization**: Pydantic for data validation and serialization
 - **Package Management**: uv (Python package manager)
 - **Compression Support**: gzip and brotli for envelope compression handling
+- **Async Operations**: Full async/await support for improved performance
 
 ### Architecture
 
 The application follows a standard FastAPI structure with:
 
-- **API Layer**: REST endpoints in `/resentry/api/v1/` for handling different resources
-- **Database Layer**: SQLAlchemy models and schemas in `/resentry/database/`
-- **Business Logic**: Sentry envelope processing in `/resentry/sentry.py`
+- **API Layer**: Async REST endpoints in `/resentry/api/v1/` for handling different resources
+- **Database Layer**: Async SQLAlchemy models and schemas in `/resentry/database/`
+- **Business Logic**: Sentry envelope processing in `/resentry/sentry.py` with async support
 - **Configuration**: Settings management via Pydantic Settings in `/resentry/config.py`
 
 ### Key Components
 
 #### Envelope Processing
-- The core functionality is in `/resentry/sentry.py` which handles Sentry envelope parsing
-- Supports compressed envelopes (gzip, brotli)
+- The core functionality is in `/resentry/sentry.py` which handles Sentry envelope parsing with async support
+- Supports compressed envelopes (gzip, brotli) with async decompression
 - Extracts event items, transactions, and other Sentry data types
 - Stores raw envelope data in the database for later processing
+- Uses async helper functions for JSON parsing and data handling
 
 #### Database Models
 - **Project**: Represents a project that can send Sentry events
@@ -138,7 +140,7 @@ make lint
 3. **Project Management**: CRUD operations for projects that send events
 4. **Database Storage**: Persistent storage of Sentry envelopes with event metadata
 5. **RESTful API**: Standard REST endpoints for all operations
-6. **Async/await Support**: Asynchronous operations where appropriate
+6. **Full Async Support**: Complete async/await implementation for improved performance and scalability
 7. **Environment Configuration**: Environment variable-based configuration
 
 ## Integration with Sentry SDK
@@ -149,18 +151,31 @@ To use Resentry with Sentry SDKs, configure the DSN in your client applications 
 http://<resentry-host>/api/v1/<project_id>/envelope/
 ```
 
+## Async Architecture
+
+The application uses an asynchronous architecture throughout to maximize performance and scalability:
+
+- **Async Dependency Injection**: Uses `AsyncSession` for database connections with proper lifecycle management
+- **Async Database Queries**: All database operations use `async/await` pattern with SQLAlchemy's async methods
+- **Async Request Handling**: HTTP request processing is fully asynchronous from reception to database storage
+- **Async Utility Functions**: Helper functions for JSON parsing, compression, and data handling execute asynchronously using thread pools
+- **Async Testing**: Test configuration supports async database operations for more accurate testing
+
 ## Project Structure
 
 ```
 resentry/
 ├── resentry/
 │   ├── api/              # API endpoints and routers
-│   │   ├── v1/           # Version 1 API endpoints
-│   │   └── health.py     # Health check endpoint
+│   │   ├── deps.py       # Async dependency injection
+│   │   ├── health.py     # Health check endpoint
+│   │   └── v1/           # Version 1 API endpoints
 │   ├── database/         # Database models, schemas and connections
+│   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
+│   │   └── helpers.py    # Async helper functions
 │   ├── config.py         # Configuration settings
 │   ├── main.py           # Main FastAPI application
-│   └── sentry.py         # Sentry envelope parsing logic
+│   └── sentry.py         # Sentry envelope parsing logic with async support
 ├── tests/                # Test files
 ├── pyproject.toml        # Project dependencies and configuration
 ├── uv.lock               # Dependency lock file

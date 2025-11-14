@@ -3,14 +3,16 @@ from typing import List
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from resentry.api.v1.router import api_router
 from resentry.api.health import health_router
-from resentry.database.database import async_engine, Base, sync_engine, get_sync_db
+from resentry.database.database import async_engine, Base, sync_engine, get_async_db
 from resentry.config import settings
 from resentry.database.models.envelope import Envelope as EnvelopeModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
+from resentry.api.deps import get_async_db_session
 
 
 @asynccontextmanager
@@ -59,9 +61,10 @@ def create_app() -> FastAPI:
     @app.get(
         "/api/projects/events", response_model=List[EnvelopeSchema], tags=["envelopes"]
     )
-    def get_project_events(db: Session = Depends(get_sync_db)):
-        envelopes = db.exec(select(EnvelopeModel)).all()
-        return envelopes
+    async def get_project_events(db: AsyncSession = Depends(get_async_db_session)):
+        result = await db.execute(select(EnvelopeModel))
+        envelopes = result.all()
+        return [envelope[0] for envelope in envelopes]
 
     return app
 

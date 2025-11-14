@@ -3,10 +3,13 @@ from fastapi.testclient import TestClient
 from sqlmodel import create_engine, Session
 from sqlalchemy.pool import StaticPool
 from unittest.mock import patch
+import asyncio
+from contextlib import asynccontextmanager
 
 from resentry.main import create_app
 from resentry.database.database import get_sync_db, get_async_db, create_async_session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlmodel import SQLModel
 
 
 @pytest.fixture(scope="function")
@@ -26,10 +29,14 @@ def client():
     )
 
     print(f"Using in-memory database for tests: {sync_engine.url}")
-    # Create all tables
-    from sqlmodel import SQLModel
 
-    SQLModel.metadata.create_all(bind=sync_engine)
+    # Create all tables using the async engine (run synchronously for the fixture)
+    async def create_tables():
+        async with async_engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+
+    # Run the async table creation
+    asyncio.run(create_tables())
 
     # Create a sessionmaker that uses the test engine
     from sqlalchemy.orm import sessionmaker

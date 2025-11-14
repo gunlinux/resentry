@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import io
 import json
-import gzip
 import typing
 from typing import TypedDict
+
+from resentry.utils.helpers import async_json_loads, async_decode_utf8, async_gzip_decompress, async_brotli_decompress
 
 
 class EnvelopeHeader(TypedDict, total=False):
@@ -38,11 +39,12 @@ class EnvelopeItem:
         """Returns the raw payload bytes."""
         return self.payload
 
-    def get_payload_json(self) -> dict[str, typing.Any] | None:
+    async def get_payload_json(self) -> dict[str, typing.Any] | None:
         """Returns the payload as JSON if it's JSON-compatible."""
         if self.content_type.startswith("application/json"):
             try:
-                return json.loads(self.payload.decode("utf-8"))
+                decoded_payload = await async_decode_utf8(self.payload)
+                return await async_json_loads(decoded_payload)
             except (json.JSONDecodeError, UnicodeDecodeError):
                 pass
         return None
@@ -87,6 +89,19 @@ class Envelope:
         return f"<Envelope headers={self.headers} items={len(self.items)}>"
 
 
+async def parse_json_async(
+    data: bytes,
+) -> typing.Any:  # Using Any since JSON parsing results can be different types
+    """
+    Safely parse JSON from bytes, handling UTF-8 encoding asynchronously.
+    """
+    if isinstance(data, bytes):
+        data_str = await async_decode_utf8(data)
+        return await async_json_loads(data_str)
+    else:
+        return await async_json_loads(data)
+
+
 def parse_json(
     data: bytes,
 ) -> typing.Any:  # Using Any since JSON parsing results can be different types
@@ -100,9 +115,9 @@ def parse_json(
     return json.loads(data_str)
 
 
-def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
+async def unpack_sentry_envelope_async(envelope_data: bytes) -> Envelope:
     """
-    Unpacks a Sentry envelope from raw bytes.
+    Unpacks a Sentry envelope from raw bytes asynchronously.
 
     Args:
         envelope_data: Raw bytes of the envelope (may be compressed)
@@ -112,12 +127,10 @@ def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
     """
     # First, check for compression and decompress if necessary
     if envelope_data.startswith(b"\x1f\x8b"):  # Gzip magic number
-        envelope_data = gzip.decompress(envelope_data)
+        envelope_data = await async_gzip_decompress(envelope_data)
     elif envelope_data.startswith(b"\x42\x5a"):  # Brotli magic number (partial check)
         try:
-            import brotli  # type: ignore
-
-            envelope_data = brotli.decompress(envelope_data)
+            envelope_data = await async_brotli_decompress(envelope_data)
         except ImportError:
             raise ValueError(
                 "Brotli compression detected but brotli module not available",
@@ -128,7 +141,7 @@ def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
 
     # Read the envelope headers (first line)
     header_line = buffer.readline().rstrip(b"\n")
-    envelope_headers = parse_json(header_line) if header_line else {}
+    envelope_headers = parse_json(header_line) if header_line else {}  # Using sync version for in-memory operations
 
     # Parse items until we run out of data
     items = []
@@ -139,7 +152,7 @@ def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
             break
 
         try:
-            item_headers = parse_json(item_header_line)
+            item_headers = parse_json(item_header_line)  # Using sync version for in-memory operations
         except json.JSONDecodeError:
             # If we can't parse the header, we've likely reached the end or have malformed data
             break
@@ -174,6 +187,34 @@ def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
         items.append(item)
 
     return Envelope(headers=typing.cast(EnvelopeHeader, envelope_headers), items=items)
+
+
+async def unpack_sentry_envelope_from_request_async(
+    envelope_bytes: bytes,
+    content_encoding: str | None = None,
+) -> Envelope:
+    """
+    Unpack a Sentry envelope from HTTP request data asynchronously.
+
+    Args:
+        envelope_bytes: The raw envelope data from the HTTP request body
+        content_encoding: The content encoding header (e.g., 'gzip', 'br')
+
+    Returns:
+        Deserialized Envelope object
+    """
+    # Handle compression based on Content-Encoding header
+    if content_encoding == "gzip":
+        envelope_bytes = await async_gzip_decompress(envelope_bytes)
+    elif content_encoding == "br":
+        try:
+            envelope_bytes = await async_brotli_decompress(envelope_bytes)
+        except ImportError:
+            raise ValueError(
+                "Brotli compression detected but brotli module not available",
+            )
+
+    return await unpack_sentry_envelope_async(envelope_bytes)
 
 
 def unpack_sentry_envelope_from_request(
