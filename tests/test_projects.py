@@ -13,9 +13,7 @@ def test_create_project(client: TestClient):
 
 def test_get_projects(client: TestClient):
     # First create a project
-    client.post(
-        "/api/v1/projects/", json={"name": "Test Project", "lang": "python"}
-    )
+    client.post("/api/v1/projects/", json={"name": "Test Project", "lang": "python"})
     # Then get all projects
     response = client.get("/api/v1/projects/")
     assert response.status_code == 200

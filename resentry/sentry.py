@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import io
 import json
+import gzip
 import typing
 from typing import TypedDict
 
-from resentry.utils.helpers import async_json_loads, async_decode_utf8, async_gzip_decompress, async_brotli_decompress
+from resentry.utils.helpers import (
+    async_json_loads,
+    async_decode_utf8,
+    async_gzip_decompress,
+    async_brotli_decompress,
+)
 
 
 class EnvelopeHeader(TypedDict, total=False):
@@ -141,7 +147,9 @@ async def unpack_sentry_envelope_async(envelope_data: bytes) -> Envelope:
 
     # Read the envelope headers (first line)
     header_line = buffer.readline().rstrip(b"\n")
-    envelope_headers = parse_json(header_line) if header_line else {}  # Using sync version for in-memory operations
+    envelope_headers = (
+        parse_json(header_line) if header_line else {}
+    )  # Using sync version for in-memory operations
 
     # Parse items until we run out of data
     items = []
@@ -152,7 +160,89 @@ async def unpack_sentry_envelope_async(envelope_data: bytes) -> Envelope:
             break
 
         try:
-            item_headers = parse_json(item_header_line)  # Using sync version for in-memory operations
+            item_headers = parse_json(
+                item_header_line
+            )  # Using sync version for in-memory operations
+        except json.JSONDecodeError:
+            # If we can't parse the header, we've likely reached the end or have malformed data
+            break
+
+        # Get the length of the payload
+        length = item_headers.get("length", 0)
+        # Convert length to int if it's a string
+        if isinstance(length, str):
+            try:
+                length = int(length)
+            except ValueError:
+                length = 0
+
+        # Ensure length is a non-negative integer
+        if length is not None and isinstance(length, int) and length >= 0:
+            # Read exactly `length` bytes for the payload
+            payload = buffer.read(length)
+            # Read and discard the trailing newline
+            buffer.readline()
+        else:
+            # If no length specified, read up to the next newline
+            payload = buffer.readline().rstrip(b"\n")
+
+        # Ensure payload is bytes
+        if isinstance(payload, str):
+            payload = payload.encode("utf-8")
+
+        # Create the envelope item - cast headers to proper type
+        item = EnvelopeItem(
+            headers=typing.cast(ItemHeader, item_headers), payload=payload
+        )
+        items.append(item)
+
+    return Envelope(headers=typing.cast(EnvelopeHeader, envelope_headers), items=items)
+
+
+def unpack_sentry_envelope(envelope_data: bytes) -> Envelope:
+    """
+    Unpacks a Sentry envelope from raw bytes synchronously.
+
+    Args:
+        envelope_data: Raw bytes of the envelope (may be compressed)
+
+    Returns:
+        Deserialized Envelope object
+    """
+    # First, check for compression and decompress if necessary
+    if envelope_data.startswith(b"\x1f\x8b"):  # Gzip magic number
+        envelope_data = gzip.decompress(envelope_data)
+    elif envelope_data.startswith(b"\x42\x5a"):  # Brotli magic number (partial check)
+        try:
+            import brotli  # type: ignore
+
+            envelope_data = brotli.decompress(envelope_data)
+        except ImportError:
+            raise ValueError(
+                "Brotli compression detected but brotli module not available",
+            )
+
+    # Create a file-like object for reading the envelope
+    buffer = io.BytesIO(envelope_data)
+
+    # Read the envelope headers (first line)
+    header_line = buffer.readline().rstrip(b"\n")
+    envelope_headers = (
+        parse_json(header_line) if header_line else {}
+    )  # Using sync version for in-memory operations
+
+    # Parse items until we run out of data
+    items = []
+    while True:
+        # Read item header
+        item_header_line = buffer.readline().rstrip(b"\n")
+        if not item_header_line:
+            break
+
+        try:
+            item_headers = parse_json(
+                item_header_line
+            )  # Using sync version for in-memory operations
         except json.JSONDecodeError:
             # If we can't parse the header, we've likely reached the end or have malformed data
             break

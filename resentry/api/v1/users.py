@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from resentry.api.deps import get_async_db_session
 from resentry.database.models.user import User as UserModel
@@ -18,7 +18,9 @@ async def get_users(db: AsyncSession = Depends(get_async_db_session)):
 
 
 @users_router.post("/", response_model=UserSchema)
-async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db_session)):
+async def create_user(
+    user: UserCreate, db: AsyncSession = Depends(get_async_db_session)
+):
     db_user = UserModel(**user.model_dump())
     db.add(db_user)
     await db.commit()
@@ -36,7 +38,9 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_async_db_session
 
 
 @users_router.put("/{user_id}", response_model=UserSchema)
-async def update_user(user_id: int, user: UserUpdate, db: AsyncSession = Depends(get_async_db_session)):
+async def update_user(
+    user_id: int, user: UserUpdate, db: AsyncSession = Depends(get_async_db_session)
+):
     result = await db.execute(select(UserModel).where(UserModel.id == user_id))
     db_user = result.first()
     if db_user is None:

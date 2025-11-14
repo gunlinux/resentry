@@ -4,11 +4,11 @@ from typing import List
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from resentry.api.v1.router import api_router
 from resentry.api.health import health_router
-from resentry.database.database import async_engine, Base, sync_engine, get_async_db
+from resentry.database.database import async_engine, Base, sync_engine
 from resentry.config import settings
 from resentry.database.models.envelope import Envelope as EnvelopeModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema

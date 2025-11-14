@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime
 
 from resentry.api.deps import get_async_db_session
@@ -30,7 +30,9 @@ async def store_envelope(
 
     # Parse the envelope using existing sentry functionality
     try:
-        envelope = await unpack_sentry_envelope_from_request_async(body, content_encoding)
+        envelope = await unpack_sentry_envelope_from_request_async(
+            body, content_encoding
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=400, detail=f"Invalid envelope format: {str(e)}"

@@ -20,12 +20,14 @@ def sync_json_dumps(data: Any) -> str:
 def sync_gzip_decompress(data: bytes) -> bytes:
     """Synchronous gzip decompression function to run in thread pool."""
     import gzip
+
     return gzip.decompress(data)
 
 
 def sync_brotli_decompress(data: bytes) -> bytes:
     """Synchronous brotli decompression function to run in thread pool."""
     import brotli  # type: ignore
+
     return brotli.decompress(data)
 
 

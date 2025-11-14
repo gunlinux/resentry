@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from resentry.api.deps import get_async_db_session
 from resentry.database.models.project import Project as ProjectModel
@@ -22,7 +22,9 @@ async def get_projects(db: AsyncSession = Depends(get_async_db_session)):
 
 
 @projects_router.post("/", response_model=ProjectSchema)
-async def create_project(project: ProjectCreate, db: AsyncSession = Depends(get_async_db_session)):
+async def create_project(
+    project: ProjectCreate, db: AsyncSession = Depends(get_async_db_session)
+):
     db_project = ProjectModel(**project.model_dump())
     db.add(db_project)
     await db.commit()
@@ -31,7 +33,9 @@ async def create_project(project: ProjectCreate, db: AsyncSession = Depends(get_
 
 
 @projects_router.get("/{project_id}", response_model=ProjectSchema)
-async def get_project(project_id: int, db: AsyncSession = Depends(get_async_db_session)):
+async def get_project(
+    project_id: int, db: AsyncSession = Depends(get_async_db_session)
+):
     result = await db.execute(select(ProjectModel).where(ProjectModel.id == project_id))
     project = result.first()
     if project is None:
@@ -41,11 +45,11 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_async_db_s
 
 @projects_router.put("/{project_id}", response_model=ProjectSchema)
 async def update_project(
-    project_id: int, project: ProjectUpdate, db: AsyncSession = Depends(get_async_db_session)
+    project_id: int,
+    project: ProjectUpdate,
+    db: AsyncSession = Depends(get_async_db_session),
 ):
-    result = await db.execute(
-        select(ProjectModel).where(ProjectModel.id == project_id)
-    )
+    result = await db.execute(select(ProjectModel).where(ProjectModel.id == project_id))
     db_project = result.first()
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -60,10 +64,10 @@ async def update_project(
 
 
 @projects_router.delete("/{project_id}")
-async def delete_project(project_id: int, db: AsyncSession = Depends(get_async_db_session)):
-    result = await db.execute(
-        select(ProjectModel).where(ProjectModel.id == project_id)
-    )
+async def delete_project(
+    project_id: int, db: AsyncSession = Depends(get_async_db_session)
+):
+    result = await db.execute(select(ProjectModel).where(ProjectModel.id == project_id))
     db_project = result.first()
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")

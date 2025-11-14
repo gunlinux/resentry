@@ -4,11 +4,11 @@ from sqlmodel import create_engine, Session
 from sqlalchemy.pool import StaticPool
 from unittest.mock import patch
 import asyncio
-from contextlib import asynccontextmanager
 
 from resentry.main import create_app
-from resentry.database.database import get_sync_db, get_async_db, create_async_session
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from resentry.database.database import get_sync_db, get_async_db
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import SQLModel
 
 
@@ -66,7 +66,12 @@ def client():
     app.dependency_overrides[get_async_db] = override_get_async_db
 
     # Override the async session creator to use in-memory engine
-    with patch('resentry.database.database.async_engine', async_engine), \
-         patch('resentry.database.database.create_async_session', lambda: AsyncSession(async_engine, expire_on_commit=False)):
+    with (
+        patch("resentry.database.database.async_engine", async_engine),
+        patch(
+            "resentry.database.database.create_async_session",
+            lambda: AsyncSession(async_engine, expire_on_commit=False),
+        ),
+    ):
         with TestClient(app) as test_client:
             yield test_client
