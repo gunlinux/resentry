@@ -191,6 +191,18 @@ The database contains three main tables:
 - `envelopes`: Raw Sentry envelope data with metadata
 - `envelope_items`: Individual items within each envelope (events, transactions, etc.)
 
+## Database Migrations
+
+The project uses Alembic for database migrations with SQLModel support:
+- **Migration Configuration**: Located in `alembic.ini` and `alembic/env.py`
+- **Migration Commands**:
+  - `uv run alembic upgrade head` - Apply all pending migrations
+  - `uv run alembic downgrade -1` - Revert the last migration
+  - `uv run alembic revision --autogenerate -m "message"` - Create a new migration based on model changes
+  - `uv run alembic current` - Show current revision
+  - `uv run alembic history` - Show migration history
+- **Initial Migration**: The initial migration (`23a1582e0e04_initial_database_schema.py`) creates all necessary tables with proper constraints and indexes
+
 ## Qwen Added Memories
 - /home/loki/qwen/python.md
 - docs/models.md
@@ -201,5 +213,6 @@ The database contains three main tables:
 
 - On routes changes - update routes.md
 - On models change - update models.md
+- On database changes - update migration system
 - Refresh memory after it
 
