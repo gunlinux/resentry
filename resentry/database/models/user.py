@@ -1,11 +1,10 @@
-from sqlalchemy import Column, Integer, String
+from sqlmodel import SQLModel, Field
+from typing import Optional
 
-from resentry.database.database import Base
 
+class User(SQLModel, table=True):
+    __tablename__ = "users"  # type: ignore
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    telegram_chat_id = Column(String, nullable=True)
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    name: str = Field(index=True)
+    telegram_chat_id: str | None = Field(default=None)

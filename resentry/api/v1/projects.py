@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 
 from resentry.api.deps import get_db_session
 from resentry.database.models.project import Project as ProjectModel
@@ -15,7 +15,7 @@ projects_router = APIRouter()
 
 @projects_router.get("/", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db_session)):
-    projects = db.query(ProjectModel).all()
+    projects = db.exec(select(ProjectModel)).all()
     return projects
 
 
@@ -30,7 +30,7 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db_session)
 
 @projects_router.get("/{project_id}", response_model=ProjectSchema)
 def get_project(project_id: int, db: Session = Depends(get_db_session)):
-    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    project = db.exec(select(ProjectModel).where(ProjectModel.id == project_id)).first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
@@ -40,7 +40,9 @@ def get_project(project_id: int, db: Session = Depends(get_db_session)):
 def update_project(
     project_id: int, project: ProjectUpdate, db: Session = Depends(get_db_session)
 ):
-    db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    db_project = db.exec(
+        select(ProjectModel).where(ProjectModel.id == project_id)
+    ).first()
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -54,7 +56,9 @@ def update_project(
 
 @projects_router.delete("/{project_id}")
 def delete_project(project_id: int, db: Session = Depends(get_db_session)):
-    db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    db_project = db.exec(
+        select(ProjectModel).where(ProjectModel.id == project_id)
+    ).first()
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 

@@ -1,5 +1,6 @@
 from typing import Generator
-from sqlalchemy.orm import Session
+from sqlmodel import Session
+
 
 from resentry.database.database import get_sync_db
 

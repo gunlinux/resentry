@@ -1,11 +1,10 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import create_engine, Session
 from sqlalchemy.pool import StaticPool
 
 from resentry.main import create_app
-from resentry.database.database import Base, get_sync_db
+from resentry.database.database import get_sync_db
 
 
 @pytest.fixture(scope="function")
@@ -16,10 +15,17 @@ def client():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(bind=engine)
+    # Create all tables
+    from sqlmodel import SQLModel
+
+    SQLModel.metadata.create_all(bind=engine)
 
     # Create a sessionmaker that uses the test engine
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    from sqlalchemy.orm import sessionmaker
+
+    TestingSessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=engine, class_=Session
+    )
 
     # Dependency override to use the test database
     def override_get_db():

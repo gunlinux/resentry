@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 import datetime
 
 from resentry.api.deps import get_db_session
@@ -17,7 +17,7 @@ async def store_envelope(
     request: Request, project_id: int, db: Session = Depends(get_db_session)
 ):
     # Check if project exists
-    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    project = db.exec(select(ProjectModel).where(ProjectModel.id == project_id)).first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -54,5 +54,5 @@ async def store_envelope(
 
 @envelopes_router.get("/projects/events", response_model=List[EnvelopeSchema])
 def get_project_events(db: Session = Depends(get_db_session)):
-    envelopes = db.query(EnvelopeModel).all()
+    envelopes = db.exec(select(EnvelopeModel)).all()
     return envelopes

@@ -3,7 +3,7 @@ from typing import List
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 
 from resentry.api.v1.router import api_router
 from resentry.api.health import health_router
@@ -16,11 +16,18 @@ from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables on startup
+    print("lifespan start")
+
+    print(settings.DATABASE_URL)
+
     if settings.DATABASE_URL.startswith("sqlite+aiosqlite"):
+        print("create_ async engine")
         # For async engine (production)
         async with async_engine.begin() as conn:
+            print("metadata create")
             await conn.run_sync(Base.metadata.create_all)
     else:
+        print("sync bd create")
         # For sync engine (testing)
         Base.metadata.create_all(bind=sync_engine)
     yield
@@ -53,7 +60,7 @@ def create_app() -> FastAPI:
         "/api/projects/events", response_model=List[EnvelopeSchema], tags=["envelopes"]
     )
     def get_project_events(db: Session = Depends(get_sync_db)):
-        envelopes = db.query(EnvelopeModel).all()
+        envelopes = db.exec(select(EnvelopeModel)).all()
         return envelopes
 
     return app

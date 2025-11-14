@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 
 from resentry.api.deps import get_db_session
 from resentry.database.models.user import User as UserModel
@@ -11,7 +11,7 @@ users_router = APIRouter()
 
 @users_router.get("/", response_model=List[UserSchema])
 def get_users(db: Session = Depends(get_db_session)):
-    users = db.query(UserModel).all()
+    users = db.exec(select(UserModel)).all()
     return users
 
 
@@ -26,7 +26,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db_session)):
 
 @users_router.get("/{user_id}", response_model=UserSchema)
 def get_user(user_id: int, db: Session = Depends(get_db_session)):
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    user = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -34,7 +34,7 @@ def get_user(user_id: int, db: Session = Depends(get_db_session)):
 
 @users_router.put("/{user_id}", response_model=UserSchema)
 def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db_session)):
-    db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    db_user = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -48,7 +48,7 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db_ses
 
 @users_router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db_session)):
-    db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    db_user = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 

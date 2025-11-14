@@ -14,3 +14,6 @@ test-dev: install
 
 install:
 	uv sync
+
+run-dev:
+	uv run granian --reload --interface asgi resentry.main:app

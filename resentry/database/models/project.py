@@ -1,11 +1,10 @@
-from sqlalchemy import Column, Integer, String
+from sqlmodel import SQLModel, Field
+from typing import Optional
 
-from resentry.database.database import Base
 
+class Project(SQLModel, table=True):
+    __tablename__ = "projects"  # type: ignore
 
-class Project(Base):
-    __tablename__ = "projects"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    lang = Column(String, index=True)
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    name: str = Field(index=True)
+    lang: str = Field(index=True)

@@ -1,19 +1,24 @@
 from typing import AsyncGenerator, Generator
+from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
-from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from resentry.config import settings
 
 
-# Create the async engine for async operations
+# Create the async engine for async operations (use regular SQLite for sync operations)
 async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,  # Set to True for SQL debugging
 )
 
 # Create the sync engine for sync operations (like tests)
-sync_engine = create_engine("sqlite:///./test.db", echo=False)
+# Replace aiosqlite with regular sqlite for sync operations
+sync_db_url = settings.DATABASE_URL.replace("sqlite+aiosqlite:///", "sqlite:///")
+sync_engine = create_engine(
+    sync_db_url,
+    echo=False,  # Set to True for SQL debugging
+)
 
 
 # Create async session factory with proper type handling
@@ -26,13 +31,13 @@ SyncSessionLocal = sessionmaker(
     bind=sync_engine, class_=Session, expire_on_commit=False
 )  # type: ignore
 
-# Create base class for models
-Base = declarative_base()
+# For compatibility with existing imports
+Base = SQLModel
 
 
 async def create_db_and_tables():
     async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
@@ -41,8 +46,5 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 def get_sync_db() -> Generator[Session, None, None]:
-    db = SyncSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    with Session(sync_engine) as session:
+        yield session

@@ -17,6 +17,8 @@ dependencies = [
     "brotli>=1.1.0",
     "httpx>=0.28.0",
     "aiosqlite>=0.21.0",
+    "granian[reload]>=2.5.7",
+    "sqlmodel>=0.0.27",
 ]
 
 [project.optional-dependencies]
