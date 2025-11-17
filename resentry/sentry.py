@@ -40,17 +40,18 @@ class EnvelopeItem:
         self.type = headers.get("type", "unknown")
         self.content_type = headers.get("content_type", "application/octet-stream")
         self.length = headers.get("length", len(payload))
+        self.payload_json = self.get_payload_json()
 
     def get_payload_bytes(self) -> bytes:
         """Returns the raw payload bytes."""
         return self.payload
 
-    async def get_payload_json(self) -> dict[str, typing.Any] | None:
+    def get_payload_json(self) -> dict[str, typing.Any] | None:
         """Returns the payload as JSON if it's JSON-compatible."""
         if self.content_type.startswith("application/json"):
             try:
-                decoded_payload = await async_decode_utf8(self.payload)
-                return await async_json_loads(decoded_payload)
+                data = self.payload.decode("utf-8", "replace")
+                return json.loads(data)
             except (json.JSONDecodeError, UnicodeDecodeError):
                 pass
         return None

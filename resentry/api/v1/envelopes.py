@@ -1,11 +1,12 @@
 from typing import List
+import typing
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime
 
 from resentry.api.deps import get_async_db_session
-from resentry.database.models.envelope import Envelope as EnvelopeModel
+from resentry.database.models.envelope import Envelope as EnvelopeModel, EnvelopeItem
 from resentry.database.models.project import Project as ProjectModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
 from resentry.sentry import unpack_sentry_envelope_from_request_async
@@ -49,10 +50,17 @@ async def store_envelope(
         sent_at=sent_at,
         dsn=envelope.headers.get("dsn"),
     )
-
     db.add(envelope_db)
     await db.commit()
     await db.refresh(envelope_db)
+    for item_id, item in enumerate(envelope.items):
+        item_db = EnvelopeItem(
+            event_id=typing.cast(int, envelope_db.id),
+            item_id=str(item_id),
+            payload=item.get_payload_bytes(),
+        )
+        db.add(item_db)
+    await db.commit()
 
     return {"message": "Envelope stored successfully", "envelope_id": envelope_db.id}
 

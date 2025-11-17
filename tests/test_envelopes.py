@@ -12,7 +12,7 @@ def test_store_envelope(client: TestClient):
     envelope_payload = b'{"event_id": "abc123", "sent_at": "2023-01-01T00:00:00Z"}\n{"type": "event", "length": 20}\n{"message": "test event"}'
 
     # Store envelope
-    response = client.post(f"/api/v1/{project_id}/envelope/", content=envelope_payload)
+    response = client.post(f"/api/{project_id}/envelope/", content=envelope_payload)
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Envelope stored successfully"

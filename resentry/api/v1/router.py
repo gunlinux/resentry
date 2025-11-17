@@ -7,4 +7,6 @@ api_router.include_router(users.users_router, prefix="/users", tags=["users"])
 api_router.include_router(
     projects.projects_router, prefix="/projects", tags=["projects"]
 )
-api_router.include_router(envelopes.envelopes_router, tags=["envelopes"])
+
+sentry_router = APIRouter()
+sentry_router.include_router(envelopes.envelopes_router, tags=["envelopes"])
