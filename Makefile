@@ -8,6 +8,7 @@ lint:
 
 test: install
 	uv run pytest
+	uv run pytest --test-alembic
 
 test-dev: install
 	uv run pytest -vv -s

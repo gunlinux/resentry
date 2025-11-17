@@ -1,25 +1,19 @@
-from logging.config import fileConfig
 import sys
 import os
 
 # Add the project root to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
 from alembic import context
 
-from resentry.database.database import sync_engine
+from resentry.config import settings
 from resentry.database import Base
+from resentry.database.database import sync_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Set the target metadata to your application's Base metadata
 target_metadata = Base.metadata
@@ -65,9 +59,7 @@ def run_migrations_online() -> None:
     connectable = sync_engine
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

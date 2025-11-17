@@ -8,7 +8,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from resentry.api.v1.router import api_router
 from resentry.api.health import health_router
-from resentry.database.database import async_engine, Base, sync_engine
 from resentry.config import settings
 from resentry.database.models.envelope import Envelope as EnvelopeModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
@@ -23,15 +22,15 @@ async def lifespan(app: FastAPI):
     print(settings.DATABASE_URL)
 
     if settings.DATABASE_URL.startswith("sqlite+aiosqlite"):
-        print("create_ async engine")
+        print("not create_ async engine")
         # For async engine (production)
-        async with async_engine.begin() as conn:
-            print("metadata create")
-            await conn.run_sync(Base.metadata.create_all)
+        # async with async_engine.begin() as conn:
+        #    print("metadata create")
+        #    await conn.run_sync(Base.metadata.create_all)
     else:
         print("sync bd create")
         # For sync engine (testing)
-        Base.metadata.create_all(bind=sync_engine)
+        # Base.metadata.create_all(bind=sync_engine)
     yield
     # Perform any cleanup on shutdown if needed
 
