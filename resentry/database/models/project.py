@@ -1,11 +1,10 @@
 from sqlmodel import SQLModel, Field
-from typing import Optional
 
 
 class Project(SQLModel, table=True):
     __tablename__ = "projects"  # type: ignore
 
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    id: int = Field(primary_key=True, default=None, index=True)
     name: str = Field(index=True)
     lang: str = Field(index=True)
-    key: str = Field(max_length=32)
+    key: str = Field(max_length=32, nullable=True, default=None)
