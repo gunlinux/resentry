@@ -1,10 +1,10 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field
+from resentry.database.models.base import Entity
 
 
-class Project(SQLModel, table=True):
+class Project(Entity, table=True):
     __tablename__ = "projects"  # type: ignore
 
-    id: int = Field(primary_key=True, default=None, index=True)
     name: str = Field(index=True)
     lang: str = Field(index=True)
     key: str = Field(max_length=32, nullable=True, default=None)

@@ -1,41 +1,40 @@
 """Repository for Post entities."""
 
-from typing import Sequence
+from typing import Sequence, Type
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from resentry.database.models.project import Project
-from sqlmodel import select
+from resentry.database.models.base import Entity
+from sqlmodel import SQLModel, select
 
-from fastapi import HTTPException
+from pydantic import BaseModel
 
-from resentry.database.schemas.project import ProjectBase
+from resentry.database.models.user import User
 
 
-class ProjectRepository:
-    """Repository for Post entities."""
-
-    def __init__(self, db: AsyncSession):
+class BaseRepo:
+    def __init__(self, db: AsyncSession, entity: Type[Entity]):
         self.db = db
+        self.entity = entity
 
-    async def get_by_id(self, id: int) -> Project | None:
-        result = await self.db.exec(select(Project).where(Project.id == id))
+    async def get_by_id(self, id: int) -> SQLModel | None:
+        result = await self.db.exec(select(self.entity).where(self.entity.id == id))
         return result.first()
 
-    async def get_all(self) -> Sequence[Project]:
-        result = await self.db.exec(select(Project))
+    async def get_all(self) -> Sequence[Entity]:
+        result = await self.db.exec(select(self.entity))
         return result.all()
 
-    async def create(self, entity: Project) -> Project:
+    async def create(self, entity: Entity) -> Entity:
         self.db.add(entity)
         await self.db.commit()
-        await self.db.refresh(entity)
         return entity
 
-    async def update(self, id: int, entity: ProjectBase) -> Project:
-        result = await self.db.exec(select(Project).where(Project.id == id))
+    async def update(self, id: int, entity: BaseModel) -> Entity | None:
+        result = await self.db.exec(select(Entity).where(Entity.id == id))
         db_project = result.first()
         if db_project is None:
-            raise HTTPException(status_code=404, detail="Project not found")
+            return None
 
         for key, value in entity.model_dump().items():
             setattr(db_project, key, value)
@@ -53,3 +52,13 @@ class ProjectRepository:
         await self.db.delete(db_project)
         await self.db.commit()
         return True
+
+
+class ProjectRepository(BaseRepo):
+    def __init__(self, db: AsyncSession):
+        super().__init__(db, Project)
+
+
+class UserRepository(BaseRepo):
+    def __init__(self, db: AsyncSession):
+        super().__init__(db, User)
