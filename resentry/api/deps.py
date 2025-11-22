@@ -12,6 +12,10 @@ async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
     async for db in get_async_db():
         try:
             yield db
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
         finally:
             await db.close()
 

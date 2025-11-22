@@ -11,7 +11,7 @@ from resentry.config import settings
 print(settings.DATABASE_URL)
 async_engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,  # Set to True for SQL debugging
+    echo=True,  # Set to True for SQL debugging
 )
 
 # Create the sync engine for sync operations (like tests)
@@ -19,7 +19,7 @@ async_engine = create_async_engine(
 sync_db_url = settings.DATABASE_URL.replace("sqlite+aiosqlite:///", "sqlite:///")
 sync_engine = create_engine(
     sync_db_url,
-    echo=False,  # Set to True for SQL debugging
+    echo=True,  # Set to True for SQL debugging
 )
 
 
