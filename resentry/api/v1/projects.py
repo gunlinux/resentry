@@ -3,13 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from resentry.api.deps import (
     get_router_repo,
 )
-from resentry.database.models.project import Project as ProjectModel
 from resentry.database.schemas.project import (
     Project as ProjectSchema,
     ProjectCreate,
     ProjectUpdate,
 )
 from resentry.repos.project import ProjectRepository
+from resentry.usecases.project import CreateProject
 
 projects_router = APIRouter()
 repo_dep = get_router_repo(ProjectRepository)
@@ -24,8 +24,7 @@ async def get_projects(repo: ProjectRepository = Depends(repo_dep)):
 async def create_project(
     project: ProjectCreate, repo: ProjectRepository = Depends(repo_dep)
 ):
-    project_db = ProjectModel(**project.model_dump())
-    return await repo.create(project_db)
+    return await CreateProject(body=project, repo=repo).execute()
 
 
 @projects_router.get("/{project_id}", response_model=ProjectSchema)
