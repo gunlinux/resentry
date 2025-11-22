@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 class ProjectBase(BaseModel):
     name: str
     lang: str
-    key: str | None
+    key: str | None = None
 
 
 class ProjectCreate(ProjectBase):
