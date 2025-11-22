@@ -5,6 +5,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime
 
+# from resentry import sentry
 from resentry.api.deps import get_async_db_session
 from resentry.database.models.envelope import Envelope as EnvelopeModel, EnvelopeItem
 from resentry.database.models.project import Project as ProjectModel
@@ -24,6 +25,10 @@ async def store_envelope(
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     project = project[0]  # Get the actual project object
+
+    sentry_header = request.headers.get("x-sentry-auth", "")
+    if f"sentry_key={project.key}" not in sentry_header:
+        raise HTTPException(status_code=401, detail="Setup sentry_key")
 
     # Read the raw body bytes
     body = await request.body()
