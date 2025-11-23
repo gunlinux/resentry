@@ -1,11 +1,10 @@
 from typing import List
 import typing
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Path, Header
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime
 
-# from resentry import sentry
 from resentry.api.deps import get_async_db_session
 from resentry.database.models.envelope import Envelope as EnvelopeModel, EnvelopeItem
 from resentry.database.models.project import Project as ProjectModel
@@ -15,21 +14,29 @@ from resentry.sentry import unpack_sentry_envelope_from_request_async
 envelopes_router = APIRouter()
 
 
-@envelopes_router.post("/{project_id}/envelope/")
-async def store_envelope(
-    request: Request, project_id: int, db: AsyncSession = Depends(get_async_db_session)
-):
-    # Check if project exists
+async def load_and_check_project(
+    project_id: int = Path(...),
+    x_sentry_auth: str = Header(...),
+    db: AsyncSession = Depends(get_async_db_session),
+) -> ProjectModel:
     result = await db.execute(select(ProjectModel).where(ProjectModel.id == project_id))
     project = result.first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     project = project[0]  # Get the actual project object
 
-    sentry_header = request.headers.get("x-sentry-auth", "")
-    if f"sentry_key={project.key}" not in sentry_header:
-        raise HTTPException(status_code=401, detail="Setup sentry_key")
+    if f"sentry_key={project.key}" not in x_sentry_auth:
+        raise HTTPException(status_code=403, detail="Forbidden")
 
+    return project
+
+
+@envelopes_router.post("/{project_id}/envelope/")
+async def store_envelope(
+    request: Request,
+    project: ProjectModel = Depends(load_and_check_project),
+    db: AsyncSession = Depends(get_async_db_session),
+):
     # Read the raw body bytes
     body = await request.body()
     content_encoding = request.headers.get("content-encoding", None)
@@ -49,7 +56,7 @@ async def store_envelope(
     sent_at = datetime.datetime.fromisoformat(sent_at_str) if sent_at_str else None
 
     envelope_db = EnvelopeModel(
-        project_id=project_id,
+        project_id=project.id,
         payload=body,
         event_id=envelope.event_id,
         sent_at=sent_at,
