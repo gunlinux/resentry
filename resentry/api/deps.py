@@ -5,7 +5,7 @@ from fastapi import Depends
 
 
 from resentry.database.database import get_async_db
-from resentry.repos.project import ProjectRepository, BaseRepo
+from resentry.repos.project import BaseRepo
 
 
 async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -18,12 +18,6 @@ async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await db.close()
-
-
-async def get_repo_project(
-    db: AsyncSession = Depends(get_async_db_session),
-) -> ProjectRepository:
-    return ProjectRepository(db)
 
 
 def get_repo(
