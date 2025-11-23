@@ -2,9 +2,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from resentry.api.deps import get_router_repo
-from resentry.database.models.user import User as UserModel
+from resentry.core.hashing import Hasher
 from resentry.database.schemas.user import User as UserSchema, UserCreate, UserUpdate
 from resentry.repos.user import UserRepository
+from resentry.usecases.user import CreateUser
+from resentry.config import settings
 
 users_router = APIRouter()
 repo_dep = get_router_repo(UserRepository)
@@ -17,8 +19,10 @@ async def get_users(repo: UserRepository = Depends(repo_dep)):
 
 @users_router.post("/", response_model=UserSchema)
 async def create_user(user: UserCreate, repo: UserRepository = Depends(repo_dep)):
-    new_user = UserModel(**user.model_dump())
-    return await repo.create(new_user)
+    return await CreateUser(
+        repo=repo,
+        hasher=Hasher(salt=settings.SALT),
+    ).execute(body=user)
 
 
 @users_router.get("/{user_id}", response_model=UserSchema)

@@ -7,3 +7,4 @@ class User(Entity, table=True):
 
     name: str = Field(index=True)
     telegram_chat_id: str | None = Field(default=None)
+    password: str = Field(nullable=False)

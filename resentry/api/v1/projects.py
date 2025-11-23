@@ -24,7 +24,7 @@ async def get_projects(repo: ProjectRepository = Depends(repo_dep)):
 async def create_project(
     project: ProjectCreate, repo: ProjectRepository = Depends(repo_dep)
 ):
-    return await CreateProject(body=project, repo=repo).execute()
+    return await CreateProject(repo=repo).execute(body=project)
 
 
 @projects_router.get("/{project_id}", response_model=ProjectSchema)

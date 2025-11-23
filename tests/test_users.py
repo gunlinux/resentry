@@ -3,7 +3,12 @@ from fastapi.testclient import TestClient
 
 def test_create_user(client: TestClient):
     response = client.post(
-        "/api/v1/users/", json={"name": "Test User", "telegram_chat_id": "123456"}
+        "/api/v1/users/",
+        json={
+            "name": "Test User",
+            "telegram_chat_id": "123456",
+            "password": "secret_password",
+        },
     )
     assert response.status_code == 200
     data = response.json()
@@ -14,7 +19,12 @@ def test_create_user(client: TestClient):
 def test_get_users(client: TestClient):
     # First create a user
     client.post(
-        "/api/v1/users/", json={"name": "Test User", "telegram_chat_id": "123456"}
+        "/api/v1/users/",
+        json={
+            "name": "Test User",
+            "telegram_chat_id": "123456",
+            "password": "secret_password",
+        },
     )
     # Then get all users
     response = client.get("/api/v1/users/")
@@ -25,7 +35,12 @@ def test_get_users(client: TestClient):
 def test_get_user_by_id(client: TestClient):
     # Create a user first
     create_response = client.post(
-        "/api/v1/users/", json={"name": "Test User", "telegram_chat_id": "123456"}
+        "/api/v1/users/",
+        json={
+            "name": "Test User",
+            "telegram_chat_id": "123456",
+            "password": "secret_password",
+        },
     )
     user_id = create_response.json()["id"]
 
@@ -39,14 +54,23 @@ def test_get_user_by_id(client: TestClient):
 def test_update_user(client: TestClient):
     # Create a user first
     create_response = client.post(
-        "/api/v1/users/", json={"name": "Test User", "telegram_chat_id": "123456"}
+        "/api/v1/users/",
+        json={
+            "name": "Test User",
+            "telegram_chat_id": "123456",
+            "password": "secret_password",
+        },
     )
     user_id = create_response.json()["id"]
 
     # Update the user
     response = client.put(
         f"/api/v1/users/{user_id}",
-        json={"name": "Updated User", "telegram_chat_id": "654321"},
+        json={
+            "name": "Updated User",
+            "telegram_chat_id": "654321",
+            "password": "secret_password",
+        },
     )
     assert response.status_code == 200
     data = response.json()
@@ -57,7 +81,12 @@ def test_update_user(client: TestClient):
 def test_delete_user(client: TestClient):
     # Create a user first
     create_response = client.post(
-        "/api/v1/users/", json={"name": "Test User", "telegram_chat_id": "123456"}
+        "/api/v1/users/",
+        json={
+            "name": "Test User",
+            "telegram_chat_id": "123456",
+            "password": "secret_password",
+        },
     )
     user_id = create_response.json()["id"]
 
