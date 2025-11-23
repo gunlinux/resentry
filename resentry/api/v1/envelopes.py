@@ -5,25 +5,25 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime
 
-from resentry.api.deps import get_async_db_session
+from resentry.api.deps import get_async_db_session, get_router_repo
+from resentry.repos.project import ProjectRepository
 from resentry.database.models.envelope import Envelope as EnvelopeModel, EnvelopeItem
 from resentry.database.models.project import Project as ProjectModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
 from resentry.sentry import unpack_sentry_envelope_from_request_async
 
 envelopes_router = APIRouter()
+project_repo = get_router_repo(ProjectRepository)
 
 
 async def load_and_check_project(
     project_id: int = Path(...),
     x_sentry_auth: str = Header(...),
-    db: AsyncSession = Depends(get_async_db_session),
+    repo: ProjectRepository = Depends(project_repo),
 ) -> ProjectModel:
-    result = await db.execute(select(ProjectModel).where(ProjectModel.id == project_id))
-    project = result.first()
+    project = typing.cast(ProjectModel | None, await repo.get_by_id(project_id))
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
-    project = project[0]  # Get the actual project object
 
     if f"sentry_key={project.key}" not in x_sentry_auth:
         raise HTTPException(status_code=403, detail="Forbidden")
