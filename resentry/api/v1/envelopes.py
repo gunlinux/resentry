@@ -1,15 +1,13 @@
 from typing import List
 import typing
 from fastapi import APIRouter, Depends, HTTPException, Request, Path, Header
-import datetime
 
 from resentry.api.deps import get_router_repo
 from resentry.repos.project import ProjectRepository
 from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
-from resentry.database.models.envelope import Envelope as EnvelopeModel, EnvelopeItem
 from resentry.database.models.project import Project as ProjectModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
-from resentry.sentry import unpack_sentry_envelope_from_request_async
+from resentry.usecases.envelope import StoreEnvelope
 
 envelopes_router = APIRouter()
 project_repo = get_router_repo(ProjectRepository)
@@ -36,42 +34,24 @@ async def load_and_check_project(
 async def store_envelope(
     request: Request,
     project: ProjectModel = Depends(load_and_check_project),
-    repo: ProjectRepository = Depends(envelope_repo),
-    repo_items: ProjectRepository = Depends(envelope_item_repo),
+    repo: EnvelopeRepository = Depends(envelope_repo),
+    repo_items: EnvelopeItemRepository = Depends(envelope_item_repo),
 ):
     # Read the raw body bytes
     body = await request.body()
     content_encoding = request.headers.get("content-encoding", None)
 
-    # Parse the envelope using existing sentry functionality
-    try:
-        envelope = await unpack_sentry_envelope_from_request_async(
-            body, content_encoding
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid envelope format: {str(e)}"
-        )
-
-    # Create envelope record in database
-    sent_at_str = envelope.headers.get("sent_at")
-    sent_at = datetime.datetime.fromisoformat(sent_at_str) if sent_at_str else None
-
-    envelope_db = EnvelopeModel(
+    envelope_handler = StoreEnvelope(
+        content_encoding=content_encoding,
+        body=body,
+        repo=repo,
+        repo_items=repo_items,
         project_id=project.id,
-        payload=body,
-        event_id=envelope.event_id,
-        sent_at=sent_at,
-        dsn=envelope.headers.get("dsn"),
     )
-    envelope_db = await repo.create(envelope_db)
-    for item_id, item in enumerate(envelope.items):
-        item_db = EnvelopeItem(
-            event_id=typing.cast(int, envelope_db.id),
-            item_id=str(item_id),
-            payload=item.get_payload_bytes(),
-        )
-        await repo_items.create(item_db)
+    envelope_db = await envelope_handler.execute()
+
+    if envelope_db is None:
+        raise HTTPException(status_code=400, detail="Invalid envelope format")
 
     return {"message": "Envelope stored successfully", "envelope_id": envelope_db.id}
 
