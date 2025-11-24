@@ -6,19 +6,23 @@ Resentry is a FastAPI-based web application that serves as a Sentry-compatible e
 
 ### Core Technologies
 - **Framework**: FastAPI (Python web framework with built-in API documentation)
-- **Database**: SQLAlchemy ORM with async support for multiple database backends (defaults to SQLite)
+- **Database**: SQLModel ORM (combines SQLAlchemy ORM with Pydantic features) with async support for multiple database backends (defaults to SQLite)
 - **Serialization**: Pydantic for data validation and serialization
 - **Package Management**: uv (Python package manager)
 - **Compression Support**: gzip and brotli for envelope compression handling
+- **Database Migrations**: Alembic for schema migration management
 - **Async Operations**: Full async/await support for improved performance
+- **Web Server**: Granian (Rust-based ASGI server) for high-performance serving
 
 ### Architecture
 
-The application follows a standard FastAPI structure with:
+The application follows a modular architecture pattern with separation of concerns across different layers:
 
 - **API Layer**: Async REST endpoints in `/resentry/api/v1/` for handling different resources
 - **Database Layer**: Async SQLAlchemy models and schemas in `/resentry/database/`
-- **Business Logic**: Sentry envelope processing in `/resentry/sentry.py` with async support
+- **Repository Layer**: Data access patterns in `/resentry/repos/` for database operations
+- **Use Cases Layer**: Business logic implementations in `/resentry/usecases/` for specific application functionality
+- **Business Logic**: Additional core functionality in `/resentry/sentry.py` with async support
 - **Configuration**: Settings management via Pydantic Settings in `/resentry/config.py`
 
 ### Key Components
@@ -30,21 +34,38 @@ The application follows a standard FastAPI structure with:
 - Stores raw envelope data in the database for later processing
 - Uses async helper functions for JSON parsing and data handling
 
+#### Repository Layer
+- **Base Repository**: Generic repository pattern in `/resentry/repos/base.py` for common database operations
+- **Project Repository**: Project-specific database operations in `/resentry/repos/project.py`
+- **Envelope Repository**: Envelope-specific database operations in `/resentry/repos/envelope.py`
+- **User Repository**: User-specific database operations in `/resentry/repos/user.py`
+- Provides a clean abstraction over direct database access with proper async session management
+
+#### Use Case Layer
+- **Project Use Cases**: Business logic for project management in `/resentry/usecases/project.py`
+- **Envelope Use Cases**: Business logic for envelope processing in `/resentry/usecases/envelope.py`
+- Contains the core business rules and application-specific logic separated from API layer concerns
+
 #### Database Models
 - **Project**: Represents a project that can send Sentry events
 - **Envelope**: Stores the complete Sentry envelope with its raw payload
 - **EnvelopeItem**: Individual items within an envelope (events, transactions, etc.)
+- **User**: Represents application users, primarily for notifications
 
 #### API Endpoints
 - **Health check**: `/health/` - Basic health status
+- **Users**: `/api/v1/users/` - CRUD operations for users
+- **User by ID**: `/api/v1/users/{user_id}` - Get, update, or delete a specific user
 - **Projects**: `/api/v1/projects/` - CRUD operations for projects
-- **Envelopes**: `/api/v1/{project_id}/envelope/` - Receive and store Sentry envelopes
+- **Project by ID**: `/api/v1/projects/{project_id}` - Get, update, or delete a specific project
+- **Envelopes**: `/api/v1/{project_id}/envelope/` - Receive and store Sentry envelopes (requires authentication via X-Sentry-Auth header)
 - **Events**: `/api/projects/events` - Retrieve all stored events
+- **Events Alternative**: `/api/v1/projects/events` - Alternative endpoint to retrieve all stored events
 
 ## Building and Running
 
 ### Prerequisites
-- Python 3.11 or higher
+- Python 3.12 or higher
 - uv package manager (https://github.com/astral-sh/uv)
 
 ### Setup Instructions
@@ -158,6 +179,8 @@ The application uses an asynchronous architecture throughout to maximize perform
 - **Async Dependency Injection**: Uses `AsyncSession` for database connections with proper lifecycle management
 - **Async Database Queries**: All database operations use `async/await` pattern with SQLAlchemy's async methods
 - **Async Request Handling**: HTTP request processing is fully asynchronous from reception to database storage
+- **Async Repository Layer**: Async data access patterns in repository classes for clean separation of concerns
+- **Async Use Case Layer**: Business logic implemented with async/await for long-running operations
 - **Async Utility Functions**: Helper functions for JSON parsing, compression, and data handling execute asynchronously using thread pools
 - **Async Testing**: Test configuration supports async database operations for more accurate testing
 
@@ -165,31 +188,38 @@ The application uses an asynchronous architecture throughout to maximize perform
 
 ```
 resentry/
-├── resentry/
+├── alembic/              # Database migration files
+├── docs/                 # Documentation files
+├── resentry/             # Main application package
 │   ├── api/              # API endpoints and routers
 │   │   ├── deps.py       # Async dependency injection
 │   │   ├── health.py     # Health check endpoint
 │   │   └── v1/           # Version 1 API endpoints
 │   ├── database/         # Database models, schemas and connections
+│   │   ├── models/       # Database model definitions
+│   │   └── schemas/      # Pydantic schemas for API serialization
+│   ├── repos/            # Repository layer for database operations
+│   ├── usecases/         # Business logic and use case implementations
 │   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
 │   │   └── helpers.py    # Async helper functions
 │   ├── config.py         # Configuration settings
 │   ├── main.py           # Main FastAPI application
 │   └── sentry.py         # Sentry envelope parsing logic with async support
 ├── tests/                # Test files
-├── pyproject.toml        # Project dependencies and configuration
-├── uv.lock               # Dependency lock file
+├── alembic.ini           # Alembic configuration
+├── dev.py                # Development utilities
 ├── Makefile              # Build commands
-├── init_db.py            # Database initialization script
-└── .env                  # Environment variables (not in repo)
+├── pyproject.toml        # Project dependencies and configuration
+└── uv.lock               # Dependency lock file
 ```
 
 ## Database Schema
 
-The database contains three main tables:
+The database contains four main tables:
 - `projects`: Information about projects that send Sentry events
 - `envelopes`: Raw Sentry envelope data with metadata
 - `envelope_items`: Individual items within each envelope (events, transactions, etc.)
+- `users`: Information about application users, primarily for notifications
 
 ## Database Migrations
 

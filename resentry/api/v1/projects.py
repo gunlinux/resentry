@@ -3,34 +3,33 @@ from fastapi import APIRouter, Depends, HTTPException
 from resentry.api.deps import (
     get_router_repo,
 )
-from resentry.database.models.project import Project as ProjectModel
 from resentry.database.schemas.project import (
     Project as ProjectSchema,
     ProjectCreate,
     ProjectUpdate,
 )
-from resentry.repos.project import ProjectRepository, BaseRepo
+from resentry.repos.project import ProjectRepository
+from resentry.usecases.project import CreateProject
 
 projects_router = APIRouter()
-
-
 repo_dep = get_router_repo(ProjectRepository)
 
 
 @projects_router.get("/", response_model=list[ProjectSchema])
-async def get_projects(repo: BaseRepo = Depends(repo_dep)):
+async def get_projects(repo: ProjectRepository = Depends(repo_dep)):
     return await repo.get_all()
 
 
 @projects_router.post("/", response_model=ProjectSchema)
-async def create_project(project: ProjectCreate, repo: BaseRepo = Depends(repo_dep)):
-    project_db = ProjectModel(**project.model_dump())
-    return await repo.create(project_db)
+async def create_project(
+    project: ProjectCreate, repo: ProjectRepository = Depends(repo_dep)
+):
+    return await CreateProject(repo=repo).execute(body=project)
 
 
 @projects_router.get("/{project_id}", response_model=ProjectSchema)
 async def get_project(project_id: int, repo: ProjectRepository = Depends(repo_dep)):
-    project = repo.get_by_id(project_id)
+    project = await repo.get_by_id(project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project

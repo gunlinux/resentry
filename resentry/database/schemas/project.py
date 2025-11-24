@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict
 class ProjectBase(BaseModel):
     name: str
     lang: str
-    key: str | None
 
 
 class ProjectCreate(ProjectBase):
@@ -17,5 +16,6 @@ class ProjectUpdate(ProjectBase):
 
 class Project(ProjectBase):
     id: int
+    key: str
 
     model_config = ConfigDict(from_attributes=True)  # pyright: ignore[reportUnannotatedClassAttribute]

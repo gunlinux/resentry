@@ -19,6 +19,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "granian[reload]>=2.5.7",
     "sqlmodel>=0.0.27",
+    "bcrypt>=5.0.0",
 ]
 
 [project.optional-dependencies]

@@ -1,55 +1,57 @@
-"""Repository for Post entities."""
+from typing import Sequence, ClassVar
 
-from typing import Sequence
+from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from pydantic import BaseModel
 
-from resentry.database.models.project import Project
-from sqlmodel import select
-
-from fastapi import HTTPException
-
-from resentry.database.schemas.project import ProjectBase
+from resentry.database.models.base import Entity
 
 
-class ProjectRepository:
-    """Repository for Post entities."""
+class BaseRepo:
+    entity_type: ClassVar[type[Entity]] = Entity
 
     def __init__(self, db: AsyncSession):
+        if self.entity_type is None:
+            raise Exception()
         self.db = db
 
-    async def get_by_id(self, id: int) -> Project | None:
-        result = await self.db.exec(select(Project).where(Project.id == id))
+    async def get_by_id(self, id: int) -> SQLModel | None:
+        result = await self.db.exec(
+            select(self.entity_type).where(self.entity_type.id == id)
+        )
         return result.first()
 
-    async def get_all(self) -> Sequence[Project]:
-        result = await self.db.exec(select(Project))
+    async def get_all(self) -> Sequence[Entity]:
+        result = await self.db.exec(select(self.entity_type))
         return result.all()
 
-    async def create(self, entity: Project) -> Project:
+    async def create(self, entity: Entity) -> Entity:
         self.db.add(entity)
-        await self.db.commit()
-        await self.db.refresh(entity)
+        await self.db.flush()
         return entity
 
-    async def update(self, id: int, entity: ProjectBase) -> Project:
-        result = await self.db.exec(select(Project).where(Project.id == id))
-        db_project = result.first()
-        if db_project is None:
-            raise HTTPException(status_code=404, detail="Project not found")
+    async def update(self, id: int, entity: BaseModel) -> Entity | None:
+        result = await self.db.exec(
+            select(self.entity_type).where(self.entity_type.id == id)
+        )
+        db_entity = result.first()
+        if db_entity is None:
+            return None
 
         for key, value in entity.model_dump().items():
-            setattr(db_project, key, value)
+            setattr(db_entity, key, value)
 
-        await self.db.commit()
-        await self.db.refresh(db_project)
-        return db_project
+        await self.db.flush()
+        return db_entity
 
     async def delete(self, id: int) -> bool:
-        result = await self.db.exec(select(Project).where(Project.id == id))
-        db_project = result.first()
-        if db_project is None:
+        result = await self.db.exec(
+            select(self.entity_type).where(self.entity_type.id == id)
+        )
+        db_entity = result.first()
+        if db_entity is None:
             return False
 
-        await self.db.delete(db_project)
-        await self.db.commit()
+        await self.db.delete(db_entity)
+        await self.db.flush()
         return True
