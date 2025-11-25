@@ -281,6 +281,69 @@ Alternative endpoint to get all envelope events from all projects.
 
 ---
 
+### Authentication Routes
+
+All authentication routes are prefixed with `/api/v1/auth/`.
+
+#### POST `/api/v1/auth/login`
+Authenticate a user and return JWT tokens.
+
+**Parameters:** None
+
+**Request Body:**
+```json
+{
+  "login": "string",
+  "password": "string"
+}
+```
+
+**Request Model:** LoginSchema
+
+**Response:**
+```json
+{
+  "access_token": "string",
+  "refresh_token": "string"
+}
+```
+
+**Response Model:** TokenSchema
+
+**Status Codes:**
+- 200: Successful authentication
+- 401: Invalid credentials
+
+#### POST `/api/v1/auth/refresh_token`
+Refresh an expired access token using a refresh token.
+
+**Parameters:** None
+
+**Request Body:**
+```json
+{
+  "refresh_token": "string"
+}
+```
+
+**Request Model:** RefreshTokenSchema
+
+**Response:**
+```json
+{
+  "access_token": "string",
+  "refresh_token": "string"
+}
+```
+
+**Response Model:** TokenSchema
+
+**Status Codes:**
+- 200: Token refreshed successfully
+- 401: Invalid refresh token
+
+---
+
 ## Schema Definitions
 
 ### Project
@@ -292,6 +355,25 @@ Alternative endpoint to get all envelope events from all projects.
 - `id` (integer): Unique identifier for the user
 - `name` (string): Name of the user
 - `telegram_chat_id` (string, optional): Telegram chat ID for the user
+- `password` (string): Password for user authentication (hashed)
+
+### LoginSchema
+- `login` (string): User login identifier (typically username)
+- `password` (string): User password for authentication
+
+### RefreshTokenSchema
+- `refresh_token` (string): Refresh token used to obtain new access token
+
+### AccessTokenSchema
+- `access_token` (string): JWT access token for API authentication
+
+### TokenSchema
+- `access_token` (string): JWT access token for API authentication
+- `refresh_token` (string): Refresh token used to obtain new access token
+
+### TokenPayload
+- `user_id` (integer): ID of the authenticated user
+- `exp` (datetime): Expiration time of the token
 
 ### Envelope
 - `id` (integer): Unique identifier for the envelope
