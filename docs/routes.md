@@ -7,7 +7,14 @@ This document provides a comprehensive overview of all API routes available in t
 All routes assume the base URL of your Resentry instance (e.g., `http://your-resentry-host/`).
 
 ## Authentication
-Currently, the API does not require authentication for any endpoints. In a production environment, authentication should be implemented.
+The API now requires authentication using JWT Bearer tokens for specific endpoints. To access protected endpoints, you must include a valid access token in the Authorization header.
+
+**Authorization Header Format:**
+```
+Authorization: Bearer <access_token>
+```
+
+Protected endpoints require a valid JWT token with a valid expiration time. The token must be properly signed with the server's secret key.
 
 ## Route Details
 
@@ -36,6 +43,8 @@ All user management routes are prefixed with `/api/v1/users/`.
 #### GET `/api/v1/users/`
 Get all users.
 
+**Authentication:** Required - Bearer token
+
 **Parameters:** None
 
 **Response:** List of User objects
@@ -44,6 +53,8 @@ Get all users.
 
 #### POST `/api/v1/users/`
 Create a new user.
+
+**Authentication:** Required - Bearer token
 
 **Parameters:** None
 
@@ -64,6 +75,8 @@ Create a new user.
 #### GET `/api/v1/users/{user_id}`
 Get a specific user by ID.
 
+**Authentication:** Required - Bearer token
+
 **Path Parameters:**
 - `user_id` (integer): The ID of the user to retrieve
 
@@ -76,6 +89,8 @@ Get a specific user by ID.
 
 #### PUT `/api/v1/users/{user_id}`
 Update a specific user by ID.
+
+**Authentication:** Required - Bearer token
 
 **Path Parameters:**
 - `user_id` (integer): The ID of the user to update
@@ -100,6 +115,8 @@ Update a specific user by ID.
 #### DELETE `/api/v1/users/{user_id}`
 Delete a specific user by ID.
 
+**Authentication:** Required - Bearer token
+
 **Path Parameters:**
 - `user_id` (integer): The ID of the user to delete
 
@@ -122,6 +139,8 @@ All project management routes are prefixed with `/api/v1/projects/`.
 #### GET `/api/v1/projects/`
 Get all projects.
 
+**Authentication:** Required - Bearer token
+
 **Parameters:** None
 
 **Response:** List of Project objects
@@ -130,6 +149,8 @@ Get all projects.
 
 #### POST `/api/v1/projects/`
 Create a new project.
+
+**Authentication:** Required - Bearer token
 
 **Parameters:** None
 
@@ -150,6 +171,8 @@ Create a new project.
 #### GET `/api/v1/projects/{project_id}`
 Get a specific project by ID.
 
+**Authentication:** Required - Bearer token
+
 **Path Parameters:**
 - `project_id` (integer): The ID of the project to retrieve
 
@@ -162,6 +185,8 @@ Get a specific project by ID.
 
 #### PUT `/api/v1/projects/{project_id}`
 Update a specific project by ID.
+
+**Authentication:** Required - Bearer token
 
 **Path Parameters:**
 - `project_id` (integer): The ID of the project to update
@@ -185,6 +210,8 @@ Update a specific project by ID.
 
 #### DELETE `/api/v1/projects/{project_id}`
 Delete a specific project by ID.
+
+**Authentication:** Required - Bearer token
 
 **Path Parameters:**
 - `project_id` (integer): The ID of the project to delete
@@ -233,6 +260,8 @@ Raw Sentry envelope data in the format expected by Sentry (multiple JSON lines w
 #### GET `/api/v1/projects/events`
 Get all envelope events from all projects.
 
+**Authentication:** Required - Bearer token
+
 **Parameters:** None
 
 **Response:** List of Envelope objects
@@ -241,6 +270,8 @@ Get all envelope events from all projects.
 
 #### GET `/api/projects/events`
 Alternative endpoint to get all envelope events from all projects.
+
+**Authentication:** Required - Bearer token
 
 **Parameters:** None
 

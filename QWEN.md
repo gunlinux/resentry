@@ -8,6 +8,7 @@ Resentry is a FastAPI-based web application that serves as a Sentry-compatible e
 - **Framework**: FastAPI (Python web framework with built-in API documentation)
 - **Database**: SQLModel ORM (combines SQLAlchemy ORM with Pydantic features) with async support for multiple database backends (defaults to SQLite)
 - **Serialization**: Pydantic for data validation and serialization
+- **Authentication**: PyJWT for secure token-based authentication and bcrypt for password hashing
 - **Package Management**: uv (Python package manager)
 - **Compression Support**: gzip and brotli for envelope compression handling
 - **Database Migrations**: Alembic for schema migration management
@@ -22,6 +23,7 @@ The application follows a modular architecture pattern with separation of concer
 - **Database Layer**: Async SQLAlchemy models and schemas in `/resentry/database/`
 - **Repository Layer**: Data access patterns in `/resentry/repos/` for database operations
 - **Use Cases Layer**: Business logic implementations in `/resentry/usecases/` for specific application functionality
+- **Core Layer**: Core functionality like password hashing in `/resentry/core/`
 - **Business Logic**: Additional core functionality in `/resentry/sentry.py` with async support
 - **Configuration**: Settings management via Pydantic Settings in `/resentry/config.py`
 
@@ -38,12 +40,13 @@ The application follows a modular architecture pattern with separation of concer
 - **Base Repository**: Generic repository pattern in `/resentry/repos/base.py` for common database operations
 - **Project Repository**: Project-specific database operations in `/resentry/repos/project.py`
 - **Envelope Repository**: Envelope-specific database operations in `/resentry/repos/envelope.py`
-- **User Repository**: User-specific database operations in `/resentry/repos/user.py`
+- **User Repository**: User-specific database operations in `/resentry/repos/user.py`, including `get_by_name` method for authentication
 - Provides a clean abstraction over direct database access with proper async session management
 
 #### Use Case Layer
 - **Project Use Cases**: Business logic for project management in `/resentry/usecases/project.py`
 - **Envelope Use Cases**: Business logic for envelope processing in `/resentry/usecases/envelope.py`
+- **Authentication Use Cases**: Business logic for authentication in `/resentry/usecases/auth.py`, including Login and RefreshToken functionality
 - Contains the core business rules and application-specific logic separated from API layer concerns
 
 #### Database Models
@@ -58,6 +61,7 @@ The application follows a modular architecture pattern with separation of concer
 - **User by ID**: `/api/v1/users/{user_id}` - Get, update, or delete a specific user
 - **Projects**: `/api/v1/projects/` - CRUD operations for projects
 - **Project by ID**: `/api/v1/projects/{project_id}` - Get, update, or delete a specific project
+- **Authentication**: `/api/v1/auth/` - JWT-based authentication including `/login` and `/refresh_token` endpoints
 - **Envelopes**: `/api/v1/{project_id}/envelope/` - Receive and store Sentry envelopes (requires authentication via X-Sentry-Auth header)
 - **Events**: `/api/projects/events` - Retrieve all stored events
 - **Events Alternative**: `/api/v1/projects/events` - Alternative endpoint to retrieve all stored events
@@ -65,7 +69,7 @@ The application follows a modular architecture pattern with separation of concer
 ## Building and Running
 
 ### Prerequisites
-- Python 3.12 or higher
+- Python 3.13 or higher
 - uv package manager (https://github.com/astral-sh/uv)
 
 ### Setup Instructions
@@ -108,7 +112,9 @@ Create a `.env` file in the project root with the following variables:
 DATABASE_URL=sqlite+aiosqlite:///./resentry.db  # Default SQLite database
 SECRET_KEY=your-secret-key-here  # Secret key for security purposes
 ALGORITHM=HS256  # Algorithm for JWT tokens
-ACCESS_TOKEN_EXPIRE_MINUTES=30  # Token expiration time
+ACCESS_TOKEN_EXPIRE_MINUTES=30  # Access token expiration time
+REFRESH_TOKEN_EXPIRE_MINUTES=10080  # Refresh token expiration time (7 days: 60*24*7)
+SALT=$2b$12$gj7lkAtmwGLm8W8Wg50h6.  # Salt for password hashing
 ```
 
 ## Testing
@@ -162,7 +168,8 @@ make lint
 4. **Database Storage**: Persistent storage of Sentry envelopes with event metadata
 5. **RESTful API**: Standard REST endpoints for all operations
 6. **Full Async Support**: Complete async/await implementation for improved performance and scalability
-7. **Environment Configuration**: Environment variable-based configuration
+7. **JWT Authentication**: Secure authentication system with login and token refresh functionality
+8. **Environment Configuration**: Environment variable-based configuration
 
 ## Integration with Sentry SDK
 
@@ -195,11 +202,17 @@ resentry/
 │   │   ├── deps.py       # Async dependency injection
 │   │   ├── health.py     # Health check endpoint
 │   │   └── v1/           # Version 1 API endpoints
+│   │       ├── auth.py   # Authentication endpoints (login, refresh token)
+│   │       └── router.py # Main API router including auth routes
+│   ├── core/             # Core functionality
+│   │   └── hashing.py    # Password hashing utilities
 │   ├── database/         # Database models, schemas and connections
 │   │   ├── models/       # Database model definitions
 │   │   └── schemas/      # Pydantic schemas for API serialization
+│   │       └── auth.py   # Authentication-related schemas
 │   ├── repos/            # Repository layer for database operations
 │   ├── usecases/         # Business logic and use case implementations
+│   │   └── auth.py       # Authentication use cases (login, refresh token)
 │   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
 │   │   └── helpers.py    # Async helper functions
 │   ├── config.py         # Configuration settings
@@ -245,4 +258,7 @@ The project uses Alembic for database migrations with SQLModel support:
 - On models change - update models.md
 - On database changes - update migration system
 - Refresh memory after it
+
+## Current Branch
+- auth_routes
 
