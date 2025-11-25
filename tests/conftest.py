@@ -1,3 +1,4 @@
+import jwt
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import create_engine, Session
@@ -6,6 +7,7 @@ from unittest.mock import patch
 import asyncio
 
 from resentry.main import create_app
+from resentry.config import settings
 from resentry.database.database import get_sync_db, get_async_db
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -75,3 +77,18 @@ def client():
     ):
         with TestClient(app) as test_client:
             yield test_client
+
+
+@pytest.fixture(scope="function")
+def create_test_token():
+    """Create a test JWT token for authentication."""
+
+    def _create_token(user_id: int = 1):
+        payload = {
+            "sub": str(user_id),  # JWT requires sub to be a string
+            "exp": 9999999999,  # Far future expiration
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return token
+
+    return _create_token

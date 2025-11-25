@@ -1,10 +1,13 @@
 from fastapi.testclient import TestClient
 
 
-def test_store_envelope(client: TestClient):
+def test_store_envelope(client: TestClient, create_test_token):
     # First create a project since envelope requires a project_id
+    token = create_test_token()
     project_response = client.post(
-        "/api/v1/projects/", json={"name": "Test Project", "lang": "python"}
+        "/api/v1/projects/",
+        json={"name": "Test Project", "lang": "python"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     project_data = project_response.json()
     project_id = project_data["id"]
@@ -24,10 +27,13 @@ def test_store_envelope(client: TestClient):
     assert "envelope_id" in data
 
 
-def test_get_project_events(client: TestClient):
+def test_get_project_events(client: TestClient, create_test_token):
+    token = create_test_token()
     # First create a project
     project_response = client.post(
-        "/api/v1/projects/", json={"name": "Test Project", "lang": "python"}
+        "/api/v1/projects/",
+        json={"name": "Test Project", "lang": "python"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     project_data = project_response.json()
     project_id = project_data["id"]
@@ -41,7 +47,10 @@ def test_get_project_events(client: TestClient):
     )
 
     # Get project events
-    response = client.get("/api/projects/events")
+    response = client.get(
+        "/api/projects/events",
+        headers={"Authorization": f"Bearer {token}"},
+    )
     assert response.status_code == 200
     # This endpoint returns the list of envelopes
     assert isinstance(response.json(), list)
