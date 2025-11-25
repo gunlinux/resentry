@@ -10,7 +10,7 @@ from resentry.api.v1.router import sentry_router
 from resentry.api.health import health_router
 from resentry.database.models.envelope import Envelope as EnvelopeModel
 from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
-from resentry.api.deps import get_async_db_session
+from resentry.api.deps import get_async_db_session, get_current_user_id
 
 
 def create_app() -> FastAPI:
@@ -38,7 +38,10 @@ def create_app() -> FastAPI:
     @app.get(
         "/api/projects/events", response_model=List[EnvelopeSchema], tags=["envelopes"]
     )
-    async def get_project_events(db: AsyncSession = Depends(get_async_db_session)):
+    async def get_project_events(
+        current_user_id: int = Depends(get_current_user_id),
+        db: AsyncSession = Depends(get_async_db_session),
+    ):
         result = await db.execute(select(EnvelopeModel))
         envelopes = result.all()
         return [envelope[0] for envelope in envelopes]
