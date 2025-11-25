@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from resentry.api.deps import (
@@ -9,7 +10,9 @@ from resentry.database.schemas.project import (
     ProjectCreate,
     ProjectUpdate,
 )
+from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
 from resentry.repos.project import ProjectRepository
+from resentry.repos.envelope import EnvelopeRepository
 from resentry.usecases.project import CreateProject
 
 projects_router = APIRouter()
@@ -66,3 +69,11 @@ async def delete_project(
 ):
     await repo.delete(id=project_id)
     return {"message": "Project deleted successfully"}
+
+
+@projects_router.get("/events", response_model=List[EnvelopeSchema], tags=["envelopes"])
+async def get_v1_project_events(
+    current_user_id: int = Depends(get_current_user_id),
+    repo: EnvelopeRepository = Depends(get_router_repo(EnvelopeRepository)),
+):
+    return await repo.get_all()
