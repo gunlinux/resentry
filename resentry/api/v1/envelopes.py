@@ -2,7 +2,7 @@ from typing import List
 import typing
 from fastapi import APIRouter, Depends, HTTPException, Request, Path, Header
 
-from resentry.api.deps import get_router_repo
+from resentry.api.deps import get_router_repo, get_current_user_id
 from resentry.repos.project import ProjectRepository
 from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
 from resentry.database.models.project import Project as ProjectModel
@@ -57,5 +57,8 @@ async def store_envelope(
 
 
 @envelopes_router.get("/projects/events", response_model=List[EnvelopeSchema])
-async def get_project_events(repo: EnvelopeRepository = Depends(envelope_repo)):
+async def get_project_events(
+    current_user_id: int = Depends(get_current_user_id),
+    repo: EnvelopeRepository = Depends(envelope_repo),
+):
     return await repo.get_all()

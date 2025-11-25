@@ -3,7 +3,7 @@ name = "resentry"
 version = "0.1.0"
 description = "A FastAPI application for Sentry envelope storage and processing"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.32.0",
@@ -20,6 +20,7 @@ dependencies = [
     "granian[reload]>=2.5.7",
     "sqlmodel>=0.0.27",
     "bcrypt>=5.0.0",
+    "pyjwt>=2.10.1",
 ]
 
 [project.optional-dependencies]

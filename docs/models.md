@@ -32,9 +32,17 @@ The User model represents application users, primarily for managing user account
   - Used for sending notifications to users via Telegram
   - Defaults to None
 
+- `password` (str)
+  - Hashed password for user authentication
+  - String field with variable length
+  - Required field - cannot be None
+  - Stores the bcrypt-hashed password value
+  - Used for authenticating users via JWT tokens
+
 **Usage:**
 - Manages user accounts within the application
 - Facilitates communication with users via Telegram (if configured)
+- Provides authentication capabilities for API access
 
 ---
 
