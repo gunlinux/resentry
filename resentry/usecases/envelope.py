@@ -7,7 +7,7 @@ from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
 from resentry.database.models.envelope import Envelope as EnvelopeModel
 
 
-from resentry.sentry import unpack_sentry_envelope_from_request_async
+from resentry.sentry import unpack_sentry_envelope_from_request
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,7 @@ class StoreEnvelope:
 
     async def execute(self) -> EnvelopeModel | None:  # type: ignore[override]
         try:
-            envelope = await unpack_sentry_envelope_from_request_async(
+            envelope = unpack_sentry_envelope_from_request(
                 self.body, self.content_encoding
             )
         except ValueError:
