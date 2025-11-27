@@ -65,6 +65,7 @@ The application follows a modular architecture pattern with separation of concer
 - **Envelopes**: `/api/v1/{project_id}/envelope/` - Receive and store Sentry envelopes (requires authentication via X-Sentry-Auth header)
 - **Events**: `/api/projects/events` - Retrieve all stored events
 - **Events Alternative**: `/api/v1/projects/events` - Alternative endpoint to retrieve all stored events
+- **Project Events**: `/api/v1/projects/events` - Retrieve all stored events (v1 endpoint with authentication)
 
 ## Building and Running
 
@@ -203,16 +204,34 @@ resentry/
 │   │   ├── health.py     # Health check endpoint
 │   │   └── v1/           # Version 1 API endpoints
 │   │       ├── auth.py   # Authentication endpoints (login, refresh token)
-│   │       └── router.py # Main API router including auth routes
+│   │       ├── envelopes.py # Envelope processing endpoints
+│   │       ├── projects.py  # Project management endpoints
+│   │       ├── users.py     # User management endpoints
+│   │       └── router.py    # Main API router including auth routes
 │   ├── core/             # Core functionality
 │   │   └── hashing.py    # Password hashing utilities
 │   ├── database/         # Database models, schemas and connections
 │   │   ├── models/       # Database model definitions
-│   │   └── schemas/      # Pydantic schemas for API serialization
-│   │       └── auth.py   # Authentication-related schemas
+│   │   │   ├── base.py   # Base model definitions
+│   │   │   ├── envelope.py # Envelope model
+│   │   │   ├── project.py  # Project model
+│   │   │   └── user.py     # User model
+│   │   ├── schemas/      # Pydantic schemas for API serialization
+│   │   │   ├── auth.py     # Authentication-related schemas
+│   │   │   ├── envelope.py # Envelope schemas
+│   │   │   ├── project.py  # Project schemas
+│   │   │   └── user.py     # User schemas
+│   │   └── database.py     # Database connection setup
 │   ├── repos/            # Repository layer for database operations
+│   │   ├── base.py       # Base repository
+│   │   ├── envelope.py   # Envelope repository
+│   │   ├── project.py    # Project repository
+│   │   └── user.py       # User repository
 │   ├── usecases/         # Business logic and use case implementations
-│   │   └── auth.py       # Authentication use cases (login, refresh token)
+│   │   ├── auth.py       # Authentication use cases (login, refresh token)
+│   │   ├── envelope.py   # Envelope use cases
+│   │   ├── project.py    # Project use cases
+│   │   └── user.py       # User use cases
 │   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
 │   │   └── helpers.py    # Async helper functions
 │   ├── config.py         # Configuration settings
@@ -251,6 +270,11 @@ The project uses Alembic for database migrations with SQLModel support:
 - docs/models.md
 - docs/routes.md
 
+
+## Documentation Files
+
+- **docs/models.md**: Detailed documentation of database models and their relationships
+- **docs/routes.md**: Comprehensive documentation of API routes and their functionality
 
 ## Memory
 
