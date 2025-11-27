@@ -92,3 +92,27 @@ def create_test_token():
         return token
 
     return _create_token
+
+
+@pytest.fixture(scope="function")
+def create_test_user(client: TestClient, create_test_token):
+    token = create_test_token()
+    return client.post(
+        "/api/v1/users/",
+        json={
+            "name": "Test User",
+            "telegram_chat_id": "123456",
+            "password": "secret_password",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
+@pytest.fixture(scope="function")
+def create_test_project(client: TestClient, create_test_token):
+    token = create_test_token()
+    return client.post(
+        "/api/v1/projects/",
+        json={"name": "Test Project", "lang": "python"},
+        headers={"Authorization": f"Bearer {token}"},
+    )

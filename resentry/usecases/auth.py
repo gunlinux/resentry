@@ -27,7 +27,7 @@ class JTW:
     def get_refresh_token(self, user_id: int) -> str:
         return self._encode(
             {
-                "user_id": user_id,
+                "sub": str(user_id),
                 "exp": datetime.now(tz=timezone.utc)
                 + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES),
             }
@@ -36,7 +36,7 @@ class JTW:
     def get_access_token(self, user_id: int) -> str:
         return self._encode(
             {
-                "user_id": user_id,
+                "sub": str(user_id),
                 "exp": datetime.now(tz=timezone.utc)
                 + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
             }
@@ -75,6 +75,6 @@ class RefreshToken:
         token_gen = JTW()
         data = token_gen.decode(body.refresh_token)
         return TokenSchema(
-            access_token=token_gen.get_access_token(user_id=data.user_id),
-            refresh_token=token_gen.get_refresh_token(user_id=data.user_id),
+            access_token=token_gen.get_access_token(user_id=data.sub),
+            refresh_token=token_gen.get_refresh_token(user_id=data.sub),
         )

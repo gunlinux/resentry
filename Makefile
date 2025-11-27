@@ -13,6 +13,9 @@ test: install
 test-dev: install
 	uv run pytest -vv -s
 
+test-cov: install
+	uv run pytest --cov=resentry tests/
+
 install:
 	uv sync
 

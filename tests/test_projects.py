@@ -1,13 +1,8 @@
 from fastapi.testclient import TestClient
 
 
-def test_create_project(client: TestClient, create_test_token):
-    token = create_test_token()
-    response = client.post(
-        "/api/v1/projects/",
-        json={"name": "Test Project", "lang": "python"},
-        headers={"Authorization": f"Bearer {token}"},
-    )
+def test_create_project(client: TestClient, create_test_project):
+    response = create_test_project
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Test Project"

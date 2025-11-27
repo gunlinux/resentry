@@ -20,5 +20,5 @@ class TokenSchema(RefreshTokenSchema, AccessTokenSchema):
 
 
 class TokenPayload(BaseModel):
-    user_id: int
+    sub: str
     exp: datetime
