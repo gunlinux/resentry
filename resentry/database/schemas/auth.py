@@ -20,5 +20,5 @@ class TokenSchema(RefreshTokenSchema, AccessTokenSchema):
 
 
 class TokenPayload(BaseModel):
-    sub: str
+    sub: int
     exp: datetime

@@ -38,7 +38,10 @@ async def add_user_async(username: str, password: Optional[str] = None):
 
     # Create the hasher
     from resentry.database.database import create_async_session
-    hasher = Hasher(settings.SALT.encode() if isinstance(settings.SALT, str) else settings.SALT)
+
+    hasher = Hasher(
+        settings.SALT.encode() if isinstance(settings.SALT, str) else settings.SALT
+    )
 
     async with create_async_session() as session:
         # Create repository
@@ -79,15 +82,27 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Runserver command
-    runserver_parser = subparsers.add_parser("runserver", help="Run the Resentry server")
-    runserver_parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the server on")
-    runserver_parser.add_argument("--port", type=int, default=8000, help="Port to run the server on")
-    runserver_parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
+    runserver_parser = subparsers.add_parser(
+        "runserver", help="Run the Resentry server"
+    )
+    runserver_parser.add_argument(
+        "--host", type=str, default="0.0.0.0", help="Host to run the server on"
+    )
+    runserver_parser.add_argument(
+        "--port", type=int, default=8000, help="Port to run the server on"
+    )
+    runserver_parser.add_argument(
+        "--reload", action="store_true", help="Enable auto-reload"
+    )
 
     # Add-user command
     adduser_parser = subparsers.add_parser("add-user", help="Add a new user")
     adduser_parser.add_argument("username", type=str, help="Username for the new user")
-    adduser_parser.add_argument("--password", type=str, help="Password for the new user (optional, will prompt if not provided)")
+    adduser_parser.add_argument(
+        "--password",
+        type=str,
+        help="Password for the new user (optional, will prompt if not provided)",
+    )
 
     # Parse arguments
     args = parser.parse_args()
