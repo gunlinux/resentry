@@ -24,17 +24,17 @@ The application follows a modular architecture pattern with separation of concer
 - **Repository Layer**: Data access patterns in `/resentry/repos/` for database operations
 - **Use Cases Layer**: Business logic implementations in `/resentry/usecases/` for specific application functionality
 - **Core Layer**: Core functionality like password hashing in `/resentry/core/`
-- **Business Logic**: Additional core functionality in `/resentry/sentry.py` with async support
+- **Business Logic**: Additional core functionality in `/resentry/sentry.py` with synchronous support
 - **Configuration**: Settings management via Pydantic Settings in `/resentry/config.py`
 
 ### Key Components
 
 #### Envelope Processing
-- The core functionality is in `/resentry/sentry.py` which handles Sentry envelope parsing with async support
-- Supports compressed envelopes (gzip, brotli) with async decompression
+- The core functionality is in `/resentry/sentry.py` which handles Sentry envelope parsing synchronously
+- Supports compressed envelopes (gzip, brotli) with synchronous decompression
 - Extracts event items, transactions, and other Sentry data types
 - Stores raw envelope data in the database for later processing
-- Uses async helper functions for JSON parsing and data handling
+- Uses synchronous helper functions for JSON parsing and data handling
 
 #### Repository Layer
 - **Base Repository**: Generic repository pattern in `/resentry/repos/base.py` for common database operations
@@ -45,7 +45,7 @@ The application follows a modular architecture pattern with separation of concer
 
 #### Use Case Layer
 - **Project Use Cases**: Business logic for project management in `/resentry/usecases/project.py`
-- **Envelope Use Cases**: Business logic for envelope processing in `/resentry/usecases/envelope.py`
+- **Envelope Use Cases**: Business logic for envelope processing in `/resentry/usecases/envelope.py` (now uses synchronous envelope parsing)
 - **Authentication Use Cases**: Business logic for authentication in `/resentry/usecases/auth.py`, including Login and RefreshToken functionality
 - Contains the core business rules and application-specific logic separated from API layer concerns
 
@@ -180,16 +180,16 @@ To use Resentry with Sentry SDKs, configure the DSN in your client applications 
 http://<resentry-host>/api/v1/<project_id>/envelope/
 ```
 
-## Async Architecture
+## Synchronous Architecture
 
-The application uses an asynchronous architecture throughout to maximize performance and scalability:
+The application now uses a synchronous architecture for envelope processing to simplify operations and improve performance:
 
-- **Async Dependency Injection**: Uses `AsyncSession` for database connections with proper lifecycle management
+- **Sync Dependency Injection**: Uses `AsyncSession` for database connections with proper lifecycle management
 - **Async Database Queries**: All database operations use `async/await` pattern with SQLAlchemy's async methods
-- **Async Request Handling**: HTTP request processing is fully asynchronous from reception to database storage
+- **Sync Request Handling**: HTTP request processing for envelope parsing is synchronous from reception to database storage
 - **Async Repository Layer**: Async data access patterns in repository classes for clean separation of concerns
 - **Async Use Case Layer**: Business logic implemented with async/await for long-running operations
-- **Async Utility Functions**: Helper functions for JSON parsing, compression, and data handling execute asynchronously using thread pools
+- **Sync Utility Functions**: Helper functions for JSON parsing, compression, and data handling execute synchronously
 - **Async Testing**: Test configuration supports async database operations for more accurate testing
 
 ## Project Structure
@@ -233,10 +233,10 @@ resentry/
 │   │   ├── project.py    # Project use cases
 │   │   └── user.py       # User use cases
 │   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
-│   │   └── helpers.py    # Async helper functions
+│   │   └── helpers.py    # Synchronous helper functions
 │   ├── config.py         # Configuration settings
 │   ├── main.py           # Main FastAPI application
-│   └── sentry.py         # Sentry envelope parsing logic with async support
+│   └── sentry.py         # Sentry envelope parsing logic with synchronous support
 ├── tests/                # Test files
 ├── alembic.ini           # Alembic configuration
 ├── dev.py                # Development utilities
@@ -283,6 +283,4 @@ The project uses Alembic for database migrations with SQLModel support:
 - On database changes - update migration system
 - Refresh memory after it
 
-## Current Branch
-- auth_routes
 
