@@ -21,7 +21,7 @@ class JTW:
     _secret: str = settings.SECRET_KEY
     algorithm: str = settings.ALGORITHM
 
-    def _encode(self, payload: dict[str, int | datetime]) -> str:
+    def _encode(self, payload: dict[str, str | datetime]) -> str:
         return jwt.encode(payload, self._secret, algorithm=self.algorithm)
 
     def get_refresh_token(self, user_id: int) -> str:

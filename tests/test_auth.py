@@ -42,4 +42,3 @@ def test_create_user(client: TestClient, create_test_user):
         headers={"Authorization": f"Bearer {new_tokens.access_token}"},
     )
     assert response.status_code == 200
-
