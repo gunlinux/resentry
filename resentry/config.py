@@ -9,7 +9,11 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     SALT: bytes = b"$2b$12$gj7lkAtmwGLm8W8Wg50h6."
 
-    model_config = SettingsConfigDict(env_file=".env")  # pyright: ignore[reportUnannotatedClassAttribute]
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="RESENTRY_",
+        case_sensitive=False,
+    )  # pyright: ignore[reportUnannotatedClassAttribute]
 
 
 settings = Settings()
