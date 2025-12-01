@@ -98,7 +98,9 @@ class ResentryAPIClient:
         """Refresh the authentication token."""
         token_data = RefreshTokenSchema(refresh_token=refresh_token)
         response = self._client.post(
-            "/api/v1/auth/refresh_token", json=token_data.model_dump(), retry=False,
+            "/api/v1/auth/refresh_token",
+            json=token_data.model_dump(),
+            retry=False,
         )
 
         if response.status_code == HTTPStatus.OK:
@@ -152,7 +154,9 @@ class ResentryAPIClient:
 
     def update_user(self, user_id: int, user_update: UserUpdate) -> User | None:
         """Update a user."""
-        response = self._client.put(f"/api/v1/users/{user_id}", json=user_update.model_dump())
+        response = self._client.put(
+            f"/api/v1/users/{user_id}", json=user_update.model_dump()
+        )
 
         if response.status_code == HTTPStatus.OK:
             return User(**response.json())
@@ -188,7 +192,9 @@ class ResentryAPIClient:
 
     def create_project(self, project_create: ProjectCreate) -> Project | None:
         """Create a new project."""
-        response = self._client.post("/api/v1/projects/", json=project_create.model_dump())
+        response = self._client.post(
+            "/api/v1/projects/", json=project_create.model_dump()
+        )
 
         if response.status_code == HTTPStatus.OK:
             return Project(**response.json())

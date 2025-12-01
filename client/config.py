@@ -14,5 +14,7 @@ class Config(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="RESENTRYCLI_",
-        env_file=".clienv", case_sensitive=False, cli_ignore_unknown_args=True
+        env_file=".clienv",
+        case_sensitive=False,
+        cli_ignore_unknown_args=True,
     )

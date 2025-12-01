@@ -20,6 +20,7 @@ def cli(ctx, api_url):
 
     if api_url:
         config.api_url = api_url
+    print(f"working with {config.api_url}")
 
     # Store the API client in the context for subcommands
     ctx.ensure_object(dict)
