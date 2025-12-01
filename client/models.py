@@ -50,7 +50,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     """User update model."""
 
-    name: str
+    name: Optional[str] = None
     telegram_chat_id: Optional[str] = None
 
 
@@ -82,7 +82,7 @@ class Envelope(BaseModel):
 
     id: int
     project_id: int
-    payload: str  # This might be binary data in practice
+    # payload: str  # This might be binary data in practice
     event_id: Optional[str] = None
     sent_at: Optional[datetime] = None
     dsn: Optional[str] = None

@@ -111,12 +111,10 @@ def create_user(name, telegram_chat_id, password):
 @click.option("--telegram-chat-id", help="New Telegram chat ID")
 def update_user(user_id, name, telegram_chat_id):
     """Update a user."""
-    if not name:
-        click.echo("At least one field (name) must be specified for update")
-        return
 
     client = click.get_current_context().obj["client"]
     try:
+        print(name, telegram_chat_id)
         user_update = UserUpdate(name=name, telegram_chat_id=telegram_chat_id)
         user = client.update_user(user_id, user_update)
         click.echo(f"Updated user: ID={user.id}, Name={user.name}")
@@ -238,35 +236,18 @@ def events():
 
 
 @events.command(name="list")
-def events_list():
+@click.argument("project_id", type=int)
+def events_list(project_id: int):
     """List all events."""
     client = click.get_current_context().obj["client"]
     try:
-        envelopes = client.get_project_events()
+        envelopes = client.get_project_events(project_id)
         for envelope in envelopes:
             click.echo(
                 f"ID: {envelope.id}, Project ID: {envelope.project_id}, Event ID: {envelope.event_id}"
             )
     except Exception as e:
         click.echo(f"Error getting events: {e}")
-
-
-@cli.command()
-@click.argument("project_id", type=int)
-@click.argument("envelope_file", type=click.Path(exists=True))
-@click.option("--auth-header", required=True, help="X-Sentry-Auth header value")
-def send_envelope(project_id, envelope_file, auth_header):
-    """Send an envelope to a project."""
-    client = click.get_current_context().obj["client"]
-    try:
-        with open(envelope_file, "r") as f:
-            envelope_data = f.read()
-
-        result = client.send_envelope(project_id, envelope_data, auth_header)
-        click.echo("Envelope sent successfully!")
-        click.echo(json.dumps(result, indent=2))
-    except Exception as e:
-        click.echo(f"Error sending envelope: {e}")
 
 
 def main():

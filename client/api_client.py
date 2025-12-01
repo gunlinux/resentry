@@ -222,9 +222,9 @@ class ResentryAPIClient:
             response.raise_for_status()
 
     # Event/envelope methods
-    def get_project_events(self) -> List[Envelope] | None:
+    def get_project_events(self, project_id: int) -> List[Envelope] | None:
         """Get all project events."""
-        response = self._client.get("/api/projects/events")
+        response = self._client.get(f"/api/projects/{project_id}/events")
 
         if response.status_code == HTTPStatus.OK:
             envelopes_data = response.json()
@@ -232,12 +232,3 @@ class ResentryAPIClient:
         else:
             response.raise_for_status()
 
-    def get_v1_project_events(self) -> List[Envelope] | None:
-        """Get all v1 project events."""
-        response = self._client.get("/api/v1/projects/events")
-
-        if response.status_code == HTTPStatus.OK:
-            envelopes_data = response.json()
-            return [Envelope(**envelope_data) for envelope_data in envelopes_data]
-        else:
-            response.raise_for_status()

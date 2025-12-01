@@ -11,7 +11,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(UserBase):
-    pass
+    name: str | None = None
 
 
 class User(UserBase):
