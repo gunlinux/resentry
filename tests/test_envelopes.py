@@ -48,7 +48,7 @@ def test_get_project_events(client: TestClient, create_test_token):
 
     # Get project events
     response = client.get(
-        "/api/projects/events",
+        f"/api/projects/{project_id}/events",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200

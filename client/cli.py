@@ -1,6 +1,5 @@
 """Command-line interface for Resentry API client."""
 
-import json
 import click
 from dotenv import load_dotenv
 from client.api_client import ResentryAPIClient
@@ -246,6 +245,8 @@ def events_list(project_id: int):
             click.echo(
                 f"ID: {envelope.id}, Project ID: {envelope.project_id}, Event ID: {envelope.event_id}"
             )
+            for event in envelope.items:
+                click.echo(f"\tID: {event.id} {event.payload}")
     except Exception as e:
         click.echo(f"Error getting events: {e}")
 

@@ -231,4 +231,3 @@ class ResentryAPIClient:
             return [Envelope(**envelope_data) for envelope_data in envelopes_data]
         else:
             response.raise_for_status()
-

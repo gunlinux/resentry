@@ -86,3 +86,15 @@ class Envelope(BaseModel):
     event_id: Optional[str] = None
     sent_at: Optional[datetime] = None
     dsn: Optional[str] = None
+    items: list["EnvelopeItem"] | None = None
+
+
+class EnvelopeItem(BaseModel):
+    """Envelope Item model."""
+
+    id: int
+    # project_id: int
+    payload: str  # This might be binary data in practice
+    # event_id: Optional[str] = None
+    sent_at: Optional[datetime] = None
+    # dsn: Optional[str] = None
