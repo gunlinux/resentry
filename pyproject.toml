@@ -21,6 +21,7 @@ dependencies = [
     "sqlmodel>=0.0.27",
     "bcrypt>=5.0.0",
     "pyjwt>=2.10.1",
+    "click>=8.3.0",
 ]
 
 [project.optional-dependencies]
@@ -37,7 +38,7 @@ dev = [
 start = "resentry.main:app"
 run-dev = "uvicorn resentry.main:app --reload --host 0.0.0.0 --port 8000"
 run-prod = "uv run uvicorn resentry.main:app --host 0.0.0.0 --port 8000"
-resentry = "resentry.cli:main"
+resentry = "client.cli:main"
 
 [dependency-groups]
 dev = [

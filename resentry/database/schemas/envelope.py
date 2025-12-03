@@ -26,6 +26,15 @@ class EnvelopeItemBase(BaseModel):
     payload: bytes
 
 
+class EnvelopeResponse(BaseModel):
+    id: int
+    project_id: int
+    event_id: str | None = None
+    sent_at: datetime | None = None
+    dsn: str | None = None
+    items: list["EnvelopeItem"] | None = None
+
+
 class EnvelopeItemCreate(EnvelopeItemBase):
     pass
 

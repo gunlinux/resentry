@@ -39,7 +39,8 @@ class BaseRepo:
             return None
 
         for key, value in entity.model_dump().items():
-            setattr(db_entity, key, value)
+            if value is not None:
+                setattr(db_entity, key, value)
 
         await self.db.flush()
         return db_entity

@@ -8,6 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+.env
+tokens.json
 
 *.db
 *.md

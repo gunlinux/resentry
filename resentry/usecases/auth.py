@@ -58,10 +58,10 @@ class Login:
     def validate_password(self, user: User, password: str) -> bool:
         return self.hasher.verify_password(password, user.password)
 
-    async def execute(self, body: LoginSchema) -> TokenSchema:
+    async def execute(self, body: LoginSchema) -> TokenSchema | None:
         user_db = await self.repo.get_by_name(body.login)
         if not user_db or not self.validate_password(user_db, body.password):
-            raise ValueError("")
+            return None
         token_gen = JTW()
         return TokenSchema(
             access_token=token_gen.get_access_token(user_id=user_db.id),

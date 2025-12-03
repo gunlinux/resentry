@@ -6,7 +6,7 @@ from resentry.api.deps import get_router_repo, get_current_user_id
 from resentry.repos.project import ProjectRepository
 from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
 from resentry.database.models.project import Project as ProjectModel
-from resentry.database.schemas.envelope import Envelope as EnvelopeSchema
+from resentry.database.schemas.envelope import EnvelopeResponse
 from resentry.usecases.envelope import StoreEnvelope
 
 envelopes_router = APIRouter()
@@ -56,9 +56,15 @@ async def store_envelope(
     return {"message": "Envelope stored successfully", "envelope_id": envelope_db.id}
 
 
-@envelopes_router.get("/projects/events", response_model=List[EnvelopeSchema])
+@envelopes_router.get(
+    "/projects/{project_id}/events", response_model=List[EnvelopeResponse]
+)
 async def get_project_events(
+    project_id: int,
     current_user_id: int = Depends(get_current_user_id),
     repo: EnvelopeRepository = Depends(envelope_repo),
 ):
-    return await repo.get_all()
+    temp = await repo.get_all_by_project(project_id)
+    for i in temp:
+        print(i.items)
+    return temp
