@@ -301,6 +301,18 @@ wheels = [
 ]
 
 [[package]]
+name = "fastapi-injectable"
+version = "1.4.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/07/b5a12680768b89ef1bc2ebe3066fd284edc825be17249156af5081803606/fastapi_injectable-1.4.4.tar.gz", hash = "sha256:d1f8383bd9172e03b15c5dd9efcb17f0b4cce46d790efe419f674d4743aef88e", size = 30414, upload-time = "2025-11-21T16:34:23Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ef/df/52e404fe18435e42c31e8a65ffacb627525996a4de121263e00f09295672/fastapi_injectable-1.4.4-py3-none-any.whl", hash = "sha256:ec98e198abc9e4b48bfd79f8d158b75cf769a08e4748a8fd1067b68ad81ac299", size = 25930, upload-time = "2025-11-21T16:34:21.414Z" },
+]
+
+[[package]]
 name = "granian"
 version = "2.5.7"
 source = { registry = "https://pypi.org/simple" }
@@ -761,6 +773,7 @@ dependencies = [
     { name = "brotli" },
     { name = "click" },
     { name = "fastapi" },
+    { name = "fastapi-injectable" },
     { name = "granian", extra = ["reload"] },
     { name = "httpx" },
     { name = "pydantic" },
@@ -802,6 +815,7 @@ requires-dist = [
     { name = "brotli", specifier = ">=1.1.0" },
     { name = "click", specifier = ">=8.3.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "fastapi-injectable", specifier = ">=1.4.4" },
     { name = "granian", extras = ["reload"], specifier = ">=2.5.7" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "pydantic", specifier = ">=2.9.2" },
