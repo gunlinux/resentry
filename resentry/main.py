@@ -1,13 +1,21 @@
+import asyncio
+from contextlib import asynccontextmanager
+from asyncio import Queue
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from resentry.api.v1.router import api_router
 from resentry.api.v1.router import sentry_router
 from resentry.api.health import health_router
+from resentry.core.events import EventWorker, send_telegram
+from resentry.domain.queue import LogLevel
+import logging
 
 
-def create_app() -> FastAPI:
+def create_app(lifespan) -> FastAPI:
     app = FastAPI(
+        lifespan=lifespan,
         title="Resentry API",
         description="A FastAPI application for Sentry envelope storage and processing",
         version="0.1.0",
@@ -30,7 +38,40 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    queue = Queue()
+
+    event_worker = EventWorker()
+    event_worker.register(LogLevel.error, send_telegram)
+    logging.critical("lifespan registed events  %s", event_worker.events)
+
+    async def worker():
+        while True:
+            item = await queue.get()
+            if item is not None:
+                logging.critical("got new item %s", item)
+                await event_worker.process_event(item)
+            # finally:
+            #    queue.task_done()
+            await asyncio.sleep(0.1)
+
+    worker_task = asyncio.create_task(worker())
+    app.state.queue = queue
+    logging.critical("before yield")
+
+    yield
+
+    worker_task.cancel()
+
+    logging.critical("after yield")
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
+
+
+app = create_app(lifespan=lifespan)
 
 
 if __name__ == "__main__":

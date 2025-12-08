@@ -1,6 +1,7 @@
 from typing import AsyncGenerator, Type
 import jwt
-from fastapi import Depends, HTTPException, status
+import asyncio
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -20,6 +21,10 @@ async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await db.close()
+
+
+async def get_queue(request: Request) -> asyncio.Queue:
+    return request.app.state.queue
 
 
 def get_repo(

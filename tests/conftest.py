@@ -61,7 +61,7 @@ def client():
             db.close()
 
     # Create app instance
-    app = create_app()
+    app = create_app(lifespan=None)
 
     # Apply the overrides
     app.dependency_overrides[get_sync_db] = override_get_sync_db

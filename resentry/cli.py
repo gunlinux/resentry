@@ -19,7 +19,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
     """Run the Resentry server"""
     import uvicorn
 
-    app = create_app()
+    app = create_app(lifespan=None)
 
     if reload:
         uvicorn.run(app, host=host, port=port, reload=True)
