@@ -64,9 +64,9 @@ class Envelope:
         self.items = items
 
     @property
-    def event_id(self) -> str | None:
+    def event_id(self) -> str:
         """Returns the event ID from envelope headers if present."""
-        return self.headers.get("event_id")
+        return typing.cast(str, self.headers.get("event_id", ""))
 
     @property
     def description(self) -> str:

@@ -1,18 +1,23 @@
 from typing import List
 import typing
 from fastapi import APIRouter, Depends, HTTPException, Request, Path, Header
+from asyncio import Queue
 
-from resentry.api.deps import get_router_repo, get_current_user_id
+from resentry.api.deps import get_router_repo, get_current_user_id, get_queue
 from resentry.repos.project import ProjectRepository
+from resentry.repos.user import UserRepository
 from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
 from resentry.database.models.project import Project as ProjectModel
+from resentry.database.models.user import User
 from resentry.database.schemas.envelope import EnvelopeResponse
 from resentry.usecases.envelope import StoreEnvelope
+from resentry.usecases.events import ScheduleEnvelope
 
 envelopes_router = APIRouter()
 project_repo = get_router_repo(ProjectRepository)
 envelope_repo = get_router_repo(EnvelopeRepository)
 envelope_item_repo = get_router_repo(EnvelopeItemRepository)
+users_repo = get_router_repo(UserRepository)
 
 
 async def load_and_check_project(
@@ -36,6 +41,8 @@ async def store_envelope(
     project: ProjectModel = Depends(load_and_check_project),
     repo: EnvelopeRepository = Depends(envelope_repo),
     repo_items: EnvelopeItemRepository = Depends(envelope_item_repo),
+    repo_users: UserRepository = Depends(users_repo),
+    queue: Queue = Depends(get_queue),
 ):
     # Read the raw body bytes
     body = await request.body()
@@ -52,6 +59,13 @@ async def store_envelope(
 
     if envelope_db is None:
         raise HTTPException(status_code=400, detail="Invalid envelope format")
+
+    # Check if envelope_db.items exists and is iterable before the loop
+
+    if users := typing.cast("list[User]", await repo_users.get_all()):
+        await ScheduleEnvelope(queue=queue, project=project, users=users).execute(
+            envelope_db
+        )
 
     return {"message": "Envelope stored successfully", "envelope_id": envelope_db.id}
 

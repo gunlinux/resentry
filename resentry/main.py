@@ -44,13 +44,13 @@ async def lifespan(app: FastAPI):
 
     event_worker = EventWorker()
     event_worker.register(LogLevel.error, send_telegram)
-    logging.critical("lifespan registed events  %s", event_worker.events)
+    logging.info("lifespan registed events  %s", event_worker.events)
 
     async def worker():
         while True:
             item = await queue.get()
             if item is not None:
-                logging.critical("got new item %s", item)
+                logging.info("got new item %s", item)
                 await event_worker.process_event(item)
             # finally:
             #    queue.task_done()
@@ -58,13 +58,11 @@ async def lifespan(app: FastAPI):
 
     worker_task = asyncio.create_task(worker())
     app.state.queue = queue
-    logging.critical("before yield")
 
     yield
 
     worker_task.cancel()
 
-    logging.critical("after yield")
     try:
         await worker_task
     except asyncio.CancelledError:
