@@ -8,10 +8,9 @@ from resentry.config import settings
 
 
 # Create the async engine for async operations (use regular SQLite for sync operations)
-print(settings.DATABASE_URL)
 async_engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,  # Set to True for SQL debugging
+    echo=False,  # Set to True for SQL debugging
 )
 
 # Create the sync engine for sync operations (like tests)

@@ -75,10 +75,7 @@ async def store_envelope(
 )
 async def get_project_events(
     project_id: int,
-    current_user_id: int = Depends(get_current_user_id),
+    _: int = Depends(get_current_user_id),
     repo: EnvelopeRepository = Depends(envelope_repo),
 ):
-    temp = await repo.get_all_by_project(project_id)
-    for i in temp:
-        print(i.items)
-    return temp
+    return await repo.get_all_by_project(project_id)
