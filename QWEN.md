@@ -23,11 +23,23 @@ The application follows a modular architecture pattern with separation of concer
 - **Database Layer**: Async SQLAlchemy models and schemas in `/resentry/database/`
 - **Repository Layer**: Data access patterns in `/resentry/repos/` for database operations
 - **Use Cases Layer**: Business logic implementations in `/resentry/usecases/` for specific application functionality
-- **Core Layer**: Core functionality like password hashing in `/resentry/core/`
+- **Domain Layer**: Domain entities and business rules in `/resentry/domain/` (e.g., Event, LogLevel)
+- **Infrastructure Layer**: External service integrations in `/resentry/infra/` (e.g., Telegram service)
+- **Core Layer**: Core functionality like password hashing, dependency injection, and event processing in `/resentry/core/`
 - **Business Logic**: Additional core functionality in `/resentry/sentry.py` with synchronous support
 - **Configuration**: Settings management via Pydantic Settings in `/resentry/config.py`
 
 ### Key Components
+
+#### Domain Layer
+- **Event System**: Defines domain entities like `Event` and `LogLevel` in `/resentry/domain/queue.py`
+- **Event Model**: Represents application events with properties like level, project, payload, and associated users
+- **Log Levels**: Enum defining different log levels (critical, error, warning, info, debug, etc.)
+
+#### Infrastructure Layer
+- **Notification Services**: Handles external integrations like Telegram notifications in `/resentry/infra/telegram.py`
+- **Telegram Service**: Implements Telegram bot API integration for sending notifications
+- **External Communication**: Manages communication with external services such as messaging platforms
 
 #### Envelope Processing
 - The core functionality is in `/resentry/sentry.py` which handles Sentry envelope parsing synchronously
@@ -35,6 +47,12 @@ The application follows a modular architecture pattern with separation of concer
 - Extracts event items, transactions, and other Sentry data types
 - Stores raw envelope data in the database for later processing
 - Uses synchronous helper functions for JSON parsing and data handling
+
+#### Event Processing and Notifications
+- **Event Worker**: Asynchronous event processor that handles different log levels in `/resentry/core/events.py`
+- **Notification System**: Sends notifications to users via registered handlers (currently Telegram)
+- **Event Registration**: Allows registering different actions for different event levels (e.g., send Telegram message on error)
+- **Dependency Injection**: Uses fastapi-injectable for managing dependencies in event processing
 
 #### Repository Layer
 - **Base Repository**: Generic repository pattern in `/resentry/repos/base.py` for common database operations
@@ -171,6 +189,51 @@ make lint
 6. **Full Async Support**: Complete async/await implementation for improved performance and scalability
 7. **JWT Authentication**: Secure authentication system with login and token refresh functionality
 8. **Environment Configuration**: Environment variable-based configuration
+9. **Event-Driven Notifications**: Support for sending notifications via registered handlers (e.g., Telegram)
+10. **Command-Line Interface**: Built-in CLI for managing users, projects, and interacting with the API
+11. **Client Module**: Python client library for programmatic access to the API
+12. **Dependency Injection**: FastAPI integration with fastapi-injectable for managing dependencies
+
+## Command-Line Interface
+
+The application includes a command-line interface with the following commands:
+
+### Server Management
+- `resentry runserver`: Run the Resentry server
+  - Options: `--host`, `--port`, `--reload`
+  - Example: `uv run resentry runserver --port 8080 --reload`
+
+### User Management
+- `resentry add-user <username>`: Add a new user to the database
+  - Option: `--password` (optional, will prompt if not provided)
+  - Example: `uv run resentry add-user admin --password mypassword`
+
+### Client CLI
+- `python -m client`: Command-line interface for interacting with the Resentry API
+  - `health`: Check API health status
+  - `login`: Authenticate with API using username and password
+  - `user list`: List all users
+  - `user get-user <user_id>`: Get user by ID
+  - `user create-user`: Create a new user
+  - `user update-user <user_id>`: Update a user
+  - `user delete <user_id>`: Delete a user
+  - `project list`: List all projects
+  - `project get <project_id>`: Get project by ID
+  - `project create`: Create a new project
+  - `project update <project_id>`: Update a project
+  - `project delete-project <project_id>`: Delete a project
+  - `events list <project_id>`: List all events for a project
+
+## Notification System
+
+The application includes a notification system with Telegram integration:
+
+- **User Notification Setup**: Users can have Telegram chat IDs stored in their profile for receiving notifications
+- **Event-Based Notifications**: The system sends notifications when specific events occur, such as error logs
+- **Telegram Service**: Built-in Telegram bot API integration for sending messages to users
+- **Event Registration**: Different event types (critical, error, warning, etc.) can be bound to notification handlers
+- **Asynchronous Processing**: Notification sending happens asynchronously using an event queue system
+- **Extensible Architecture**: The event system allows for easy addition of other notification methods
 
 ## Integration with Sentry SDK
 
@@ -192,11 +255,30 @@ The application now uses a synchronous architecture for envelope processing to s
 - **Sync Utility Functions**: Helper functions for JSON parsing, compression, and data handling execute synchronously
 - **Async Testing**: Test configuration supports async database operations for more accurate testing
 
+## Event Handling and Notification Architecture
+
+The application includes an event-driven notification system:
+
+- **Event Loop**: Asynchronous event loop in the application lifespan that processes events from a queue
+- **Event Worker**: `EventWorker` class manages different event types and registered handlers
+- **Notification System**: Supports registering different notification handlers for various log levels
+- **Telegram Integration**: Built-in Telegram integration for sending notifications to users
+- **Dependency Injection**: Uses `fastapi-injectable` for managing dependencies in event processing
+- **Queue System**: Implements an asyncio.Queue for handling events asynchronously
+- **Lifespan Management**: Event worker is initialized during application startup and cleaned up on shutdown
+
 ## Project Structure
 
 ```
 resentry/
 ├── alembic/              # Database migration files
+├── client/               # Client command-line interface and API client
+│   ├── api_client.py     # Client for interacting with Resentry API
+│   ├── cli.py            # Command-line interface implementation
+│   ├── config.py         # Client configuration
+│   ├── http_client.py    # HTTP client utilities
+│   ├── models.py         # Client data models
+│   └── test_client.py    # Client testing utilities
 ├── docs/                 # Documentation files
 ├── resentry/             # Main application package
 │   ├── api/              # API endpoints and routers
@@ -209,6 +291,8 @@ resentry/
 │   │       ├── users.py     # User management endpoints
 │   │       └── router.py    # Main API router including auth routes
 │   ├── core/             # Core functionality
+│   │   ├── deps.py       # Dependency injection utilities
+│   │   ├── events.py     # Event processing and notification handlers
 │   │   └── hashing.py    # Password hashing utilities
 │   ├── database/         # Database models, schemas and connections
 │   │   ├── models/       # Database model definitions
@@ -222,6 +306,10 @@ resentry/
 │   │   │   ├── project.py  # Project schemas
 │   │   │   └── user.py     # User schemas
 │   │   └── database.py     # Database connection setup
+│   ├── domain/           # Domain entities and business rules
+│   │   └── queue.py      # Event and LogLevel definitions
+│   ├── infra/            # Infrastructure services
+│   │   └── telegram.py   # Telegram notification service
 │   ├── repos/            # Repository layer for database operations
 │   │   ├── base.py       # Base repository
 │   │   ├── envelope.py   # Envelope repository
@@ -234,11 +322,13 @@ resentry/
 │   │   └── user.py       # User use cases
 │   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
 │   │   └── helpers.py    # Synchronous helper functions
+│   ├── cli.py            # Command-line interface entry point
 │   ├── config.py         # Configuration settings
-│   ├── main.py           # Main FastAPI application
+│   ├── main.py           # Main FastAPI application with event processing
 │   └── sentry.py         # Sentry envelope parsing logic with synchronous support
 ├── tests/                # Test files
 ├── alembic.ini           # Alembic configuration
+├── client.py             # Client command-line interface entry point
 ├── dev.py                # Development utilities
 ├── Makefile              # Build commands
 ├── pyproject.toml        # Project dependencies and configuration
