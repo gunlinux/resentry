@@ -12,7 +12,6 @@ class EventWorker:
 
     async def process_event(self, event: Event):
         for call in self.events.get(event.level, []):
-            logging.critical("found binded caller %s", call)
             await call(event)
 
     def register(self, event_name: str, sender: "Sender"):
