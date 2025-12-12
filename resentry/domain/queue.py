@@ -1,26 +1,26 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
+import typing
 
 from resentry.database.models.project import Project
-from resentry.database.models.envelope import EnvelopeItem
 from resentry.database.models.user import User
 
 
 class LogLevel(StrEnum):
-    critical = "CRITICAL"
-    fatal = "FATAL"
-    error = "ERROR"
-    warning = "WARNING"
-    warn = "WARNING"
-    info = "INFO"
-    debug = "DEBUG"
-    notset = "NOTSET"
+    critical = "critical"
+    fatal = "fatal"
+    error = "error"
+    warning = "warning"
+    warn = "warning"
+    info = "info"
+    debug = "debug"
+    notset = "notset"
 
 
 @dataclass
 class Event:
     level: LogLevel
-    event_id: str
+    event_id: int
     project: Project
-    items: list[EnvelopeItem] | None = None
+    payload: dict[str, typing.Any]
     users: list[User] = field(default_factory=list)

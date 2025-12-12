@@ -19,7 +19,7 @@ async_engine = create_async_engine(
 sync_db_url = settings.DATABASE_URL.replace("sqlite+aiosqlite:///", "sqlite:///")
 sync_engine = create_engine(
     sync_db_url,
-    echo=True,  # Set to True for SQL debugging
+    echo=False,  # Set to True for SQL debugging
 )
 
 

@@ -1,6 +1,7 @@
 from typing import AsyncGenerator, Type
 import jwt
 import asyncio
+import logging
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -16,7 +17,8 @@ async def get_async_db_session() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield db
             await db.commit()
-        except Exception:
+        except Exception as e:
+            logging.warning("async session rollback before %s", e)
             await db.rollback()
             raise
         finally:
