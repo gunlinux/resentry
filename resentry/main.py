@@ -5,11 +5,13 @@ from asyncio import Queue
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from resentry.config import settings
 from resentry.api.v1.router import api_router
 from resentry.api.v1.router import sentry_router
 from resentry.api.health import health_router
-from resentry.core.events import EventWorker, send_telegram
+from resentry.core.events import EventWorker, TelegramSender
 from resentry.domain.queue import LogLevel
+from resentry.infra.telegram import TelegramService, create_http_client
 import logging
 
 
@@ -42,8 +44,13 @@ def create_app(lifespan) -> FastAPI:
 async def lifespan(app: FastAPI):
     queue = Queue()
 
+    client = create_http_client()
     event_worker = EventWorker()
-    event_worker.register(LogLevel.error, send_telegram)
+
+    telegram_service = TelegramService(token=settings.TELEGRAM_TOKEN, client=client)
+    telegram_sender = TelegramSender(telegram_service=telegram_service)
+
+    event_worker.register(LogLevel.error, telegram_sender)
     logging.info("lifespan registed events  %s", event_worker.events)
 
     async def worker():

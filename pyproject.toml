@@ -22,7 +22,6 @@ dependencies = [
     "bcrypt>=5.0.0",
     "pyjwt>=2.10.1",
     "click>=8.3.0",
-    "fastapi-injectable>=1.4.4",
 ]
 
 [project.optional-dependencies]
