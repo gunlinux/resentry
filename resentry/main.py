@@ -69,6 +69,7 @@ async def lifespan(app: FastAPI):
     yield
 
     worker_task.cancel()
+    await client.aclose()
 
     try:
         await worker_task

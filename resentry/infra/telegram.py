@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import logging
 import typing
 import httpx
 
