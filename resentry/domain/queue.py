@@ -3,7 +3,7 @@ from enum import StrEnum
 from datetime import datetime
 import typing
 
-from resentry.database.models.project import Project
+from resentry.domain.project import ProjectDTO
 from resentry.database.models.user import User
 
 
@@ -22,7 +22,7 @@ class LogLevel(StrEnum):
 class Event:
     level: LogLevel
     event_id: int
-    project: Project
+    project: ProjectDTO
     payload: dict[str, typing.Any]
     users: list[User] = field(default_factory=list)
     sent_at: datetime | None = None

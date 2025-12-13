@@ -3,7 +3,7 @@ from asyncio import Queue
 import json
 import typing
 
-from resentry.database.models.project import Project
+from resentry.domain.project import ProjectDTO
 from resentry.database.models.user import User
 from resentry.domain.queue import Event, LogLevel
 from resentry.database.models.envelope import Envelope
@@ -12,7 +12,7 @@ from resentry.database.models.envelope import Envelope
 @dataclass
 class ScheduleEnvelope:
     queue: Queue
-    project: Project
+    project: ProjectDTO
     users: list[User]
 
     def _get_level(self, payload: dict[str, typing.Any]) -> LogLevel:

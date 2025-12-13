@@ -7,7 +7,8 @@ from resentry.api.deps import get_router_repo, get_current_user_id, get_queue
 from resentry.repos.project import ProjectRepository
 from resentry.repos.user import UserRepository
 from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
-from resentry.database.models.project import Project as ProjectModel
+from resentry.domain.project import ProjectDTO
+from resentry.services.project import ProjectService
 from resentry.database.models.user import User
 from resentry.database.schemas.envelope import EnvelopeResponse
 from resentry.usecases.envelope import StoreEnvelope
@@ -24,8 +25,9 @@ async def load_and_check_project(
     project_id: int = Path(...),
     x_sentry_auth: str = Header(...),
     repo: ProjectRepository = Depends(project_repo),
-) -> ProjectModel:
-    project = typing.cast(ProjectModel | None, await repo.get_by_id(project_id))
+) -> ProjectDTO:
+    project_service = ProjectService(repo=repo)
+    project = await project_service.get_project_by_id(project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -38,7 +40,7 @@ async def load_and_check_project(
 @envelopes_router.post("/{project_id}/envelope/")
 async def store_envelope(
     request: Request,
-    project: ProjectModel = Depends(load_and_check_project),
+    project: ProjectDTO = Depends(load_and_check_project),
     repo: EnvelopeRepository = Depends(envelope_repo),
     repo_items: EnvelopeItemRepository = Depends(envelope_item_repo),
     repo_users: UserRepository = Depends(users_repo),

@@ -1,6 +1,6 @@
 from typing import Sequence, ClassVar
 
-from sqlmodel import SQLModel, select
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class BaseRepo:
             raise Exception()
         self.db = db
 
-    async def get_by_id(self, id: int) -> SQLModel | None:
+    async def get_by_id(self, id: int) -> Entity | None:
         result = await self.db.exec(
             select(self.entity_type).where(self.entity_type.id == id)
         )
