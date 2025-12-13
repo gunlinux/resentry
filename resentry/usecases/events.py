@@ -32,5 +32,6 @@ class ScheduleEnvelope:
                 level=self._get_level(payload),
                 payload=payload,
                 users=self.users,
+                sent_at=envelope.sent_at,
             )
             await self.queue.put(event)

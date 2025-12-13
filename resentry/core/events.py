@@ -31,6 +31,16 @@ class Sender:
 class TelegramSender(Sender):
     telegram_service: TelegramService
 
+    def _format_message(self, event: Event) -> str:
+        return f"""**Project**: {event.project.name} ({event.project.lang})
+        **Server**: {event.payload.get("server_name")}
+        **Environment**: {event.payload.get("environment")}
+
+        **Alert**: {event.level}
+
+        Incident ID: {event.event_id} Timestamp: {event.sent_at} UTCEnvironment: {event.payload.get("environment")}
+        """
+
     @override
     async def action(self, event: Event) -> None:
         for user in event.users:
@@ -38,5 +48,5 @@ class TelegramSender(Sender):
                 logging.info(f"sending to user {user.telegram_chat_id}")
                 await self.telegram_service.send_message(
                     chat_id=user.telegram_chat_id,
-                    text="not_hello",
+                    text=self._format_message(event),
                 )
