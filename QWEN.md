@@ -13,7 +13,7 @@ Resentry is a FastAPI-based web application that serves as a Sentry-compatible e
 - **Compression Support**: gzip and brotli for envelope compression handling
 - **Database Migrations**: Alembic for schema migration management
 - **Async Operations**: Full async/await support for improved performance
-- **Web Server**: Granian (Rust-based ASGI server) for high-performance serving
+- **Web Server**: uvicorn for development and production serving (supports both reload and production modes)
 
 ### Architecture
 
@@ -52,7 +52,7 @@ The application follows a modular architecture pattern with separation of concer
 - **Event Worker**: Asynchronous event processor that handles different log levels in `/resentry/core/events.py`
 - **Notification System**: Sends notifications to users via registered handlers (currently Telegram)
 - **Event Registration**: Allows registering different actions for different event levels (e.g., send Telegram message on error)
-- **Dependency Injection**: Uses fastapi-injectable for managing dependencies in event processing
+- **Dependency Injection**: Uses asyncio Queue for managing async dependencies in event processing
 
 #### Repository Layer
 - **Base Repository**: Generic repository pattern in `/resentry/repos/base.py` for common database operations
@@ -104,23 +104,28 @@ The application follows a modular architecture pattern with separation of concer
    ```bash
    # Using the run-dev script from pyproject.toml:
    uv run run-dev
-   
-   # Or directly:
+
+   # Or directly with uvicorn:
    uvicorn resentry.main:app --reload --host 0.0.0.0 --port 8000
+
+   # Or using the development script:
+   python dev.py
    ```
 
 3. **Run production server**:
    ```bash
    # Using the run-prod script from pyproject.toml:
    uv run run-prod
-   
-   # Or directly:
-   uvicorn resentry.main:app --host 0.0.0.0 --port 8000
+
+   # Or directly with uvicorn:
+   uvicorn resentry.main:app --host 0.0.0.0 --port 8000 --workers 4
    ```
 
 4. **Initialize database** (if needed):
    ```bash
-   python init_db.py
+   python -c "from resentry.database.database import create_db_and_tables; create_db_and_tables()"
+   # Or run migrations:
+   alembic upgrade head
    ```
 
 ### Environment Variables
@@ -134,6 +139,7 @@ ALGORITHM=HS256  # Algorithm for JWT tokens
 ACCESS_TOKEN_EXPIRE_MINUTES=30  # Access token expiration time
 REFRESH_TOKEN_EXPIRE_MINUTES=10080  # Refresh token expiration time (7 days: 60*24*7)
 SALT=$2b$12$gj7lkAtmwGLm8W8Wg50h6.  # Salt for password hashing
+TELEGRAM_TOKEN=your-telegram-bot-token  # Optional: Telegram bot token for notifications
 ```
 
 ## Testing
@@ -192,19 +198,21 @@ make lint
 9. **Event-Driven Notifications**: Support for sending notifications via registered handlers (e.g., Telegram)
 10. **Command-Line Interface**: Built-in CLI for managing users, projects, and interacting with the API
 11. **Client Module**: Python client library for programmatic access to the API
-12. **Dependency Injection**: FastAPI integration with fastapi-injectable for managing dependencies
+12. **Dependency Injection**: FastAPI integration with asyncio Queue for managing dependencies
 
 ## Command-Line Interface
 
 The application includes a command-line interface with the following commands:
 
 ### Server Management
-- `resentry runserver`: Run the Resentry server
-  - Options: `--host`, `--port`, `--reload`
-  - Example: `uv run resentry runserver --port 8080 --reload`
+- `uv run start`: Run the Resentry server using the uv project script
+- `uv run run-dev`: Run the development server with auto-reload
+- `uv run run-prod`: Run the production server
+- `python resentry/main.py`: Direct execution of main application
+- `python dev.py`: Run the development server (alternative method)
 
 ### User Management
-- `resentry add-user <username>`: Add a new user to the database
+- `uv run resentry add-user <username>`: Add a new user to the database
   - Option: `--password` (optional, will prompt if not provided)
   - Example: `uv run resentry add-user admin --password mypassword`
 
@@ -263,7 +271,7 @@ The application includes an event-driven notification system:
 - **Event Worker**: `EventWorker` class manages different event types and registered handlers
 - **Notification System**: Supports registering different notification handlers for various log levels
 - **Telegram Integration**: Built-in Telegram integration for sending notifications to users
-- **Dependency Injection**: Uses `fastapi-injectable` for managing dependencies in event processing
+- **Dependency Injection**: Uses asyncio Queue for managing dependencies in event processing
 - **Queue System**: Implements an asyncio.Queue for handling events asynchronously
 - **Lifespan Management**: Event worker is initialized during application startup and cleaned up on shutdown
 
@@ -273,54 +281,71 @@ The application includes an event-driven notification system:
 resentry/
 ├── alembic/              # Database migration files
 ├── client/               # Client command-line interface and API client
+│   ├── __init__.py       # Python package init
+│   ├── __main__.py       # Main entry point for python -m client
 │   ├── api_client.py     # Client for interacting with Resentry API
 │   ├── cli.py            # Command-line interface implementation
 │   ├── config.py         # Client configuration
+│   ├── exceptions.py     # Client-specific exceptions
 │   ├── http_client.py    # HTTP client utilities
 │   ├── models.py         # Client data models
 │   └── test_client.py    # Client testing utilities
 ├── docs/                 # Documentation files
+│   ├── models.md         # Database models documentation
+│   └── routes.md         # API routes documentation
 ├── resentry/             # Main application package
+│   ├── __init__.py       # Package init
 │   ├── api/              # API endpoints and routers
+│   │   ├── __init__.py   # API package init
 │   │   ├── deps.py       # Async dependency injection
 │   │   ├── health.py     # Health check endpoint
 │   │   └── v1/           # Version 1 API endpoints
+│   │       ├── __init__.py  # V1 API package init
 │   │       ├── auth.py   # Authentication endpoints (login, refresh token)
 │   │       ├── envelopes.py # Envelope processing endpoints
 │   │       ├── projects.py  # Project management endpoints
-│   │       ├── users.py     # User management endpoints
-│   │       └── router.py    # Main API router including auth routes
+│   │       ├── router.py    # Main API router including auth routes
+│   │       └── users.py     # User management endpoints
 │   ├── core/             # Core functionality
+│   │   ├── __init__.py   # Core package init
 │   │   ├── deps.py       # Dependency injection utilities
 │   │   ├── events.py     # Event processing and notification handlers
 │   │   └── hashing.py    # Password hashing utilities
 │   ├── database/         # Database models, schemas and connections
+│   │   ├── __init__.py   # Database package init
 │   │   ├── models/       # Database model definitions
+│   │   │   ├── __init__.py  # Models package init
 │   │   │   ├── base.py   # Base model definitions
 │   │   │   ├── envelope.py # Envelope model
 │   │   │   ├── project.py  # Project model
 │   │   │   └── user.py     # User model
 │   │   ├── schemas/      # Pydantic schemas for API serialization
+│   │   │   ├── __init__.py  # Schemas package init
 │   │   │   ├── auth.py     # Authentication-related schemas
 │   │   │   ├── envelope.py # Envelope schemas
 │   │   │   ├── project.py  # Project schemas
 │   │   │   └── user.py     # User schemas
 │   │   └── database.py     # Database connection setup
 │   ├── domain/           # Domain entities and business rules
+│   │   ├── __init__.py   # Domain package init
 │   │   └── queue.py      # Event and LogLevel definitions
 │   ├── infra/            # Infrastructure services
+│   │   ├── __init__.py   # Infra package init
 │   │   └── telegram.py   # Telegram notification service
 │   ├── repos/            # Repository layer for database operations
+│   │   ├── __init__.py   # Repos package init
 │   │   ├── base.py       # Base repository
 │   │   ├── envelope.py   # Envelope repository
 │   │   ├── project.py    # Project repository
 │   │   └── user.py       # User repository
 │   ├── usecases/         # Business logic and use case implementations
+│   │   ├── __init__.py   # Use cases package init
 │   │   ├── auth.py       # Authentication use cases (login, refresh token)
 │   │   ├── envelope.py   # Envelope use cases
 │   │   ├── project.py    # Project use cases
 │   │   └── user.py       # User use cases
 │   ├── utils/            # Utility functions (JSON parsing, compression, etc.)
+│   │   ├── __init__.py   # Utils package init
 │   │   └── helpers.py    # Synchronous helper functions
 │   ├── cli.py            # Command-line interface entry point
 │   ├── config.py         # Configuration settings
