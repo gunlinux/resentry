@@ -1,5 +1,4 @@
 from typing import List
-import typing
 from fastapi import APIRouter, Depends, HTTPException, Request, Path, Header
 from asyncio import Queue
 
@@ -9,7 +8,7 @@ from resentry.repos.user import UserRepository
 from resentry.repos.envelope import EnvelopeItemRepository, EnvelopeRepository
 from resentry.domain.project import ProjectDTO
 from resentry.services.project import ProjectService
-from resentry.database.models.user import User
+from resentry.services.user import UserService
 from resentry.database.schemas.envelope import EnvelopeResponse
 from resentry.usecases.envelope import StoreEnvelope
 from resentry.usecases.events import ScheduleEnvelope
@@ -63,9 +62,10 @@ async def store_envelope(
         raise HTTPException(status_code=400, detail="Invalid envelope format")
 
     # Check if envelope_db.items exists and is iterable before the loop
+    user_service = UserService(repo=repo_users)
 
-    if users := typing.cast("list[User]", await repo_users.get_all()):
-        await ScheduleEnvelope(queue=queue, project=project, users=users).execute(
+    if user_dtos := await user_service.get_all():
+        await ScheduleEnvelope(queue=queue, project=project, users=user_dtos).execute(
             envelope_db
         )
 

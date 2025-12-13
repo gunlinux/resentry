@@ -4,7 +4,7 @@ import json
 import typing
 
 from resentry.domain.project import ProjectDTO
-from resentry.database.models.user import User
+from resentry.domain.user import UserDTO
 from resentry.domain.queue import Event, LogLevel
 from resentry.database.models.envelope import Envelope
 
@@ -13,7 +13,7 @@ from resentry.database.models.envelope import Envelope
 class ScheduleEnvelope:
     queue: Queue
     project: ProjectDTO
-    users: list[User]
+    users: list[UserDTO]
 
     def _get_level(self, payload: dict[str, typing.Any]) -> LogLevel:
         if level := payload.get("level", None):

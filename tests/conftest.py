@@ -63,6 +63,9 @@ def client():
     # Create app instance
     app = create_app(lifespan=None)
 
+    # Initialize queue for the test app
+    app.state.queue = asyncio.Queue()
+
     # Apply the overrides
     app.dependency_overrides[get_sync_db] = override_get_sync_db
     app.dependency_overrides[get_async_db] = override_get_async_db
